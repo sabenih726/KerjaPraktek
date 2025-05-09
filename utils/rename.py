@@ -5,7 +5,7 @@ def clean_filename(value):
     value = re.sub(r"[\\/*?\"<>|]", "_", value)
     return value.strip().replace(" ", "_")
 
-def generate_new_filename(original_name, data, use_name=False, use_passport=False):
+def rename_file(original_name, data, use_name, use_passport):
     base_name = os.path.splitext(original_name)[0]
 
     name = data.get("Name") or data.get("Nama TKA") or ""
