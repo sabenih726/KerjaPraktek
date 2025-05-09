@@ -14,7 +14,7 @@ from extract.itk import extract_itk
 from extract.notifikasi import extract_notifikasi
 from utils.text_cleaning import clean_text
 from utils.date_utils import format_date
-from utils.rename import generate_new_filename
+from utils.rename import rename_file
 
 def extract_text_from_pdf(uploaded_file):
     text = ""
