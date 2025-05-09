@@ -10,11 +10,11 @@ from extract.itk import extract_itk
 from extract.notifikasi import extract_notifikasi
 from utils.rename import generate_new_filename
 
-def read_pdf_text(file_path):
+def extract_text_from_pdf(uploaded_file):
     text = ""
-    with fitz.open(file_path) as doc:
-        for page in doc:
-            text += page.get_text()
+    with pdfplumber.open(uploaded_file) as pdf:
+        for page in pdf.pages:
+            text += page.extract_text() + "\n"
     return text
 
 def process_pdfs(uploaded_files, doc_type, use_name, use_passport):
