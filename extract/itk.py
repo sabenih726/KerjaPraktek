@@ -1,4 +1,6 @@
 import re
+import fitz
+from utils.text_cleaning import clean_text
 from utils.date_utils import format_date
 
 def extract_itk(text: str) -> dict:
