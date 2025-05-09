@@ -161,7 +161,7 @@ def main():
             </div>
             ''', unsafe_allow_html=True)
      
-       with st.expander("Help"):
+        with st.expander("Help"):
             st.write("""
             **How to Use the Application:**
             1. Upload one or more PDF files of immigration documents
