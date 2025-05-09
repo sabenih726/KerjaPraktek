@@ -170,3 +170,7 @@ def main():
             4. Click the ‘Process PDF’ button to start extracting data
             5. View and download the extracted results in Excel format and renamed PDF files.
             """)
+
+# Main program execution
+if __name__ == "__main__":
+    main()
