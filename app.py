@@ -2,6 +2,30 @@ import streamlit as st
 from pdf_convert import process_pdfs
 import shutil
 
+# Salam waktu otomatis
+def get_greeting():
+    hour = datetime.now().hour
+    if 5 <= hour < 12:
+        return "Selamat Pagi"
+    elif 12 <= hour < 17:
+        return "Selamat Siang"
+    else:
+        return "Selamat Malam"
+
+# Fungsi untuk membuat link download
+def get_binary_file_downloader_html(bin_data, file_label='File', button_text='Download'):
+    bin_str = base64.b64encode(bin_data).decode()
+    href = f'<a href="data:application/octet-stream;base64,{bin_str}" download="{file_label}" style="text-decoration:none;"><button style="background-color:#4CAF50; color:white; padding:10px 20px; border:none; border-radius:4px; cursor:pointer;">{button_text}</button></a>'
+    return href
+
+# Set konfigurasi halaman
+st.set_page_config(
+    page_title="Ekstraksi Dokumen Imigrasi",
+    page_icon="🖥️",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
+
 # Inisialisasi session state untuk login
 if 'logged_in' not in st.session_state:
     st.session_state.logged_in = False
