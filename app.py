@@ -19,7 +19,9 @@ def login():
     password = st.text_input("Password", type="password")
 
     if st.button("Login"):
-        if username == "admin" and password == "password":  # Ganti dengan sistem login aman untuk produksi
+        if username == "sinta" and password == "sinta123":
+        if username == "ainun" and password == "ainun123":
+        if username == "fatih" and password == "fatih123":
             st.session_state.authenticated = True
             st.success("Login berhasil!")
             st.experimental_rerun()
