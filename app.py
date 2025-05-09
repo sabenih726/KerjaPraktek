@@ -161,11 +161,12 @@ def main():
             </div>
             ''', unsafe_allow_html=True)
      
-        with st.expander("Help"):
+       with st.expander("Help"):
             st.write("""
             **How to Use the Application:**
             1. Upload one or more PDF files of immigration documents
             2. Select the appropriate document type (SKTT, EVLN, ITAS, ITK, Notification)
             3. Specify whether to include the name and/or passport number in the file name
             4. Click the ‘Process PDF’ button to start extracting data
-            5. View and download the extracted results in Excel format
+            5. View and download the extracted results in Excel format and renamed PDF files.
+            """)
