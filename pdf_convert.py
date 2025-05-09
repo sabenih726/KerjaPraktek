@@ -12,7 +12,8 @@ from extract.evln import extract_evln
 from extract.itas import extract_itas
 from extract.itk import extract_itk
 from extract.notifikasi import extract_notifikasi
-from utils import clean_text, format_date
+from utils.text_cleaning import clean_text
+from utils.date_utils import format_date
 from utils.rename import generate_new_filename
 
 def extract_text_from_pdf(uploaded_file):
