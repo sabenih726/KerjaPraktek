@@ -2,7 +2,6 @@ import os
 import tempfile
 import shutil
 import pandas as pd
-from datetime import datetime
 import fitz  # PyMuPDF
 
 from extract.sktt import extract_sktt
@@ -11,8 +10,14 @@ from extract.itas import extract_itas
 from extract.itk import extract_itk
 from extract.notifikasi import extract_notifikasi
 
+def read_pdf_text(file_path):
+    text = ""
+    with fitz.open(file_path) as doc:
+        for page in doc:
+            text += page.get_text()
+    return text
 
-def process_pdfs(files, doc_type, use_name, use_passport):
+def process_pdfs(files, doc_type, use_name=False, use_passport=False):
     extracted_data = []
     renamed_files = {}
 
@@ -25,28 +30,50 @@ def process_pdfs(files, doc_type, use_name, use_passport):
         with open(file_path, "wb") as f:
             f.write(file.read())
 
+        text = read_pdf_text(file_path)
+
+        # Ekstraksi berdasarkan jenis dokumen
         if doc_type == "SKTT":
-            data, new_name = extract_sktt(file_path, use_name, use_passport)
+            data = extract_sktt(text)
         elif doc_type == "EVLN":
-            data, new_name = extract_evln(file_path, use_name, use_passport)
+            data = extract_evln(text)
         elif doc_type == "ITAS":
-            data, new_name = extract_itas(file_path, use_name, use_passport)
+            data = extract_itas(text)
         elif doc_type == "ITK":
-            data, new_name = extract_itk(file_path, use_name, use_passport)
+            data = extract_itk(text)
         elif doc_type == "Notifikasi":
-            data, new_name = extract_notifikasi(file_path, use_name, use_passport)
+            data = extract_notifikasi(text)
         else:
             continue
 
-        extracted_data.append(data)
+        # Penamaan baru berdasarkan preferensi
+        base_name = os.path.splitext(file_name)[0]
+        name_part = data.get("Name") or data.get("Nama TKA") or ""
+        passport_part = data.get("Passport No") or data.get("Passport Number") or data.get("Nomor Paspor") or ""
+
+        new_name_parts = []
+        if use_name and name_part:
+            new_name_parts.append(name_part.replace(" ", "_"))
+        if use_passport and passport_part:
+            new_name_parts.append(passport_part)
+
+        if new_name_parts:
+            new_name = "_".join(new_name_parts) + ".pdf"
+        else:
+            new_name = base_name + ".pdf"
+
+        # Rename dan simpan
         new_path = os.path.join(temp_dir, new_name)
         os.rename(file_path, new_path)
         renamed_files[file_name] = {"new_name": new_name}
+        extracted_data.append(data)
 
+    # Simpan hasil ke Excel
     df = pd.DataFrame(extracted_data)
     excel_path = os.path.join(temp_dir, "Hasil_Ekstraksi.xlsx")
     df.to_excel(excel_path, index=False)
 
+    # Kompres semua file hasil
     zip_path = shutil.make_archive(os.path.join(temp_dir, "Renamed_Files"), "zip", temp_dir)
 
     return df, excel_path, renamed_files, zip_path, temp_dir
