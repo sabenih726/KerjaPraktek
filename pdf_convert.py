@@ -18,20 +18,36 @@ def read_pdf_text(file_path):
     return text
 
 def process_pdfs(uploaded_files, doc_type, use_name, use_passport):
-    # Logika pemilihan fungsi ekstraksi berdasarkan jenis dokumen
-    if doc_type == "SKTT":
-        df, renamed_files = extract_sktt(uploaded_files, use_name, use_passport)
-    elif doc_type == "EVLN":
-        df, renamed_files = extract_evln(uploaded_files, use_name, use_passport)
-    elif doc_type == "ITAS":
-        df, renamed_files = extract_itas(uploaded_files, use_name, use_passport)
-    elif doc_type == "ITK":
-        df, renamed_files = extract_itk(uploaded_files, use_name, use_passport)
-    elif doc_type == "Notifikasi":
-        df, renamed_files = extract_notifikasi(uploaded_files, use_name, use_passport)
+    extracted_data = []
+    renamed_files = []
 
-    # Proses file, simpan sebagai excel, rename, dan zip file
-    excel_path = save_as_excel(df)
-    zip_path = save_as_zip(renamed_files)
+    for uploaded_file in uploaded_files:
+        # 1. Ekstrak teks dari PDF (pakai pdfplumber atau fitz)
+        text = extract_text_from_pdf(uploaded_file)  # Anda harus punya fungsi ini
+
+        # 2. Proses ekstraksi sesuai jenis dokumen
+        if doc_type == "EVLN":
+            data = extract_evln(text)
+        elif doc_type == "SKTT":
+            data = extract_sktt(text)
+        elif doc_type == "ITAS":
+            data = extract_itas(text)
+        elif doc_type == "ITK":
+            data = extract_itk(text)
+        elif doc_type == "Notifikasi":
+            data = extract_notifikasi(text)
+        else:
+            continue
+
+        extracted_data.append(data)
+
+        # 3. Rename file jika diminta
+        new_filename = rename_file(uploaded_file.name, data, use_name, use_passport)
+        renamed_files.append((uploaded_file, new_filename))
+
+    # 4. Buat DataFrame dan file Excel + ZIP
+    df = pd.DataFrame(extracted_data)
+    excel_path = save_to_excel(df)
+    zip_path = create_zip(renamed_files)
 
     return df, excel_path, renamed_files, zip_path
