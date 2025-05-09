@@ -86,11 +86,10 @@ def main():
                 st.markdown("- 📄 Document")
                 st.markdown("- 👥 Client")
                 st.markdown("- ⚙️ Settings")
-            
-            if st.button("Logout", type="secondary", use_container_width=True):
-                logout()
-                st.rerun()
-            
+        
+            # Konten aplikasi utama jika sudah login
+            st.write(f"Selamat datang, {st.session_state.username}!")
+            st.button("Logout", on_click=logout)
             st.caption("© 2025 PT Laman Davindo Bahman")
 
         st.markdown('<div class="header"><h1 style="margin-bottom: 0.5rem;">📑 Extraction of Immigration Documents</h1><p style="opacity: 0.8;">Upload the PDF file and the system will extract the data automatically</p></div>', unsafe_allow_html=True)
