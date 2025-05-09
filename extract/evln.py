@@ -18,7 +18,7 @@ def extract_evln(text: str) -> dict:
         if re.search(r"(?i)\bName\b|\bNama\b", line):
             parts = line.split(":")
             if len(parts) > 1:
-                data["Name"] = clean_text(parts[1], is_name_or_pob=True)
+                data["Name"] = clean_text(parts[1])
 
         elif re.search(r"(?i)\bPlace of Birth\b|\bTempat Lahir\b", line):
             parts = line.split(":")
