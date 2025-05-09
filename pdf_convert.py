@@ -3,6 +3,7 @@ import tempfile
 import shutil
 import pandas as pd
 import fitz  # PyMuPDF
+import pdfplumber
 from extract.sktt import extract_sktt
 from extract.evln import extract_evln
 from extract.itas import extract_itas
