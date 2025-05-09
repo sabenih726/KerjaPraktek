@@ -9,6 +9,7 @@ from extract.evln import extract_evln
 from extract.itas import extract_itas
 from extract.itk import extract_itk
 from extract.notifikasi import extract_notifikasi
+from utils.rename import generate_new_filename
 
 def read_pdf_text(file_path):
     text = ""
@@ -47,20 +48,7 @@ def process_pdfs(files, doc_type, use_name=False, use_passport=False):
             continue
 
         # Penamaan baru berdasarkan preferensi
-        base_name = os.path.splitext(file_name)[0]
-        name_part = data.get("Name") or data.get("Nama TKA") or ""
-        passport_part = data.get("Passport No") or data.get("Passport Number") or data.get("Nomor Paspor") or ""
-
-        new_name_parts = []
-        if use_name and name_part:
-            new_name_parts.append(name_part.replace(" ", "_"))
-        if use_passport and passport_part:
-            new_name_parts.append(passport_part)
-
-        if new_name_parts:
-            new_name = "_".join(new_name_parts) + ".pdf"
-        else:
-            new_name = base_name + ".pdf"
+        new_name = generate_new_filename(file_name, data, use_name, use_passport)
 
         # Rename dan simpan
         new_path = os.path.join(temp_dir, new_name)
