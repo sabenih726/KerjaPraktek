@@ -2,6 +2,74 @@ import streamlit as st
 from pdf_convert import process_pdfs
 import shutil
 
+# Inisialisasi session state untuk login
+if 'logged_in' not in st.session_state:
+    st.session_state.logged_in = False
+if 'username' not in st.session_state:
+    st.session_state.username = ""
+if 'login_attempt' not in st.session_state:
+    st.session_state.login_attempt = 0
+
+# Fungsi untuk login
+def check_credentials(username, password):
+    # Fungsi untuk memeriksa kredensial login
+    # Misalnya, bisa hardcoded atau dari database
+    return username == "admin" and password == "admin123"  # Ganti dengan logika autentikasi sesuai kebutuhan
+
+def login():
+    if st.session_state.username and st.session_state.password:
+        if check_credentials(st.session_state.username, st.session_state.password):
+            st.session_state.logged_in = True
+            st.session_state.login_attempt = 0
+        else:
+            st.session_state.login_attempt += 1
+
+# Fungsi untuk logout
+def logout():
+    st.session_state.logged_in = False
+    st.session_state.username = ""
+
+# Halaman Login
+def login_page():
+    col1, col2, col3 = st.columns([1, 2, 1])
+    
+    with col2:
+        st.markdown('''<div style="text-align: center; padding: 2rem 0;">
+            <h1 style="margin-bottom: 0.5rem;">🖥️ PT LAMAN DAVINDO BAHMAN</h1>
+            <p style="opacity: 0.8; margin-bottom: 2rem;">Sistem Ekstraksi Dokumen Imigrasi</p>
+        </div>''', unsafe_allow_html=True)
+        
+        # Card login dengan styling yang lebih baik
+        st.markdown('''<div style="background-color: white; border-radius: 0.5rem; padding: 2rem; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);">
+            <h2 style="text-align: center; margin-bottom: 1.5rem;">Login Pengguna</h2>''', unsafe_allow_html=True)
+        
+        # Form login
+        with st.form("login_form"):
+            st.text_input("Username", key="username")
+            st.text_input("Password", type="password", key="password")
+            
+            # Tampilkan pesan error jika login gagal
+            if st.session_state.login_attempt > 0:
+                st.error(f"Username atau password salah! (Percobaan ke-{st.session_state.login_attempt})")
+            
+            # Tombol login
+            col1, col2 = st.columns([3, 1])
+            with col1:
+                submit = st.form_submit_button("Login", on_click=login, use_container_width=True)
+            with col2:
+                demo = st.form_submit_button("Demo", use_container_width=True)
+                if demo:
+                    st.session_state.username = "demo"
+                    st.session_state.password = "demo123"
+                    login()
+        
+        st.markdown('''<div style="text-align: center; margin-top: 1rem;">
+            <p style="color: #64748b; font-size: 0.85rem;">© 2025 PT Laman Davindo Bahman</p>
+            <p style="color: #94a3b8; font-size: 0.75rem;">Versi 1.0.0</p>
+        </div>''', unsafe_allow_html=True)
+        
+        st.markdown('</div>', unsafe_allow_html=True)
+
 def main():
     if not st.session_state.logged_in:
         login_page()
