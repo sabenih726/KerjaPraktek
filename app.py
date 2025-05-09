@@ -19,9 +19,14 @@ def login():
     password = st.text_input("Password", type="password")
 
     if st.button("Login"):
-        if username == "sinta" and password == "sinta123":
-        if username == "ainun" and password == "ainun123":
-        if username == "fatih" and password == "fatih123":
+        # Daftar user dan password
+        valid_users = {
+            "sinta": "sinta123",
+            "ainun": "ainun123",
+            "fatih": "fatih123"
+        }
+
+        if username in valid_users and password == valid_users[username]:
             st.session_state.authenticated = True
             st.success("Login berhasil!")
             st.experimental_rerun()
