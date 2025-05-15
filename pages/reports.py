@@ -1,14 +1,38 @@
 import streamlit as st
 import pandas as pd
-import plotly.express as px
-import plotly.graph_objects as go
 import sys
 import os
 from datetime import datetime, timedelta
 
-# Add parent directory to path to import utils
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-import utils
+# Try to import plotly, show friendly error if not available
+try:
+    import plotly.express as px
+    import plotly.graph_objects as go
+    plotly_available = True
+except ImportError:
+    plotly_available = False
+    st.error("""
+        Plotly is not installed. Please install it using:
+        ```
+        pip install plotly
+        ```
+        Or make sure you have all dependencies installed:
+        ```
+        pip install -r requirements.txt
+        ```
+    """)
+
+# Try importing utils, show friendly error if not available
+try:
+    # Add parent directory to path to import utils
+    sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+    import utils
+    utils_available = True
+except ImportError:
+    utils_available = False
+    st.error("""
+        Utils module not found. Make sure the utils.py file is available in the parent directory.
+    """)
 
 # Page configuration
 st.set_page_config(
@@ -19,22 +43,33 @@ st.set_page_config(
 
 # Check if user is logged in
 if 'user' not in st.session_state or st.session_state.user is None:
-    st.switch_page("app.py")
+    st.warning("You need to log in first")
+    if st.button("Go to Login Page"):
+        st.switch_page("app.py")
+    st.stop()
 
 # Title
 st.title("Ticket Reports & Analytics")
 st.markdown("View statistics and reports about ticket activities")
 
 # Check if user has permission for reports
-if st.session_state.user['role'] != 'admin':
+if 'user' in st.session_state and st.session_state.user['role'] != 'admin':
     st.warning("Reports are only available to administrators.")
     if st.button("Return to Dashboard"):
         st.switch_page("app.py")
     st.stop()
 
+# Stop execution if any required modules are missing
+if not plotly_available or not utils_available:
+    st.stop()
+
 # Load tickets data
 if 'tickets_df' not in st.session_state:
-    st.session_state.tickets_df = utils.load_tickets()
+    try:
+        st.session_state.tickets_df = utils.load_tickets()
+    except Exception as e:
+        st.error(f"Error loading tickets: {str(e)}")
+        st.stop()
 
 tickets_df = st.session_state.tickets_df.copy()
 
@@ -46,8 +81,12 @@ if tickets_df.empty:
     st.stop()
 
 # Convert date columns to datetime
-tickets_df['submit_date'] = pd.to_datetime(tickets_df['submit_date'])
-tickets_df['updated_date'] = pd.to_datetime(tickets_df['updated_date'])
+try:
+    tickets_df['submit_date'] = pd.to_datetime(tickets_df['submit_date'])
+    tickets_df['updated_date'] = pd.to_datetime(tickets_df['updated_date'])
+except Exception as e:
+    st.error(f"Error converting date columns: {str(e)}")
+    st.stop()
 
 # Time period selector
 st.sidebar.header("Time Period")
