@@ -139,7 +139,7 @@ with tab1:
     st.markdown("---")
     st.subheader("Track Your Ticket")
     ticket_id_search = st.text_input("Enter your ticket ID to check status")
-    if st.button("Check Status") and ticket_id_search:
+    if st.button("Check Status", key="check_status_btn") and ticket_id_search:
         ticket = utils.get_ticket_by_id(ticket_id_search)
         if ticket:
             with st.expander("Ticket Details", expanded=True):
@@ -186,11 +186,11 @@ with tab2:
     else:
         # Show sidebar for logged in users
         st.success(f"Logged in as {st.session_state.user['full_name']} ({st.session_state.user['role']})")
-        if st.button("Go to Admin Dashboard"):
+        if st.button("Go to Admin Dashboard", key="admin_dashboard_btn"):
             # Continue to admin dashboard
             st.switch_page("pages/admin_dashboard.py")
         
-        if st.button("Logout"):
+        if st.button("Logout", key="logout_admin_tab_btn"):
             st.session_state.user = None
             st.rerun()
             
@@ -214,7 +214,7 @@ st.sidebar.write(f"**Name:** {st.session_state.user['full_name']}")
 st.sidebar.write(f"**Role:** {st.session_state.user['role'].capitalize()}")
 st.sidebar.write(f"**Department:** {st.session_state.user['department']}")
 
-if st.sidebar.button("Logout"):
+if st.sidebar.button("Logout", key="logout_sidebar_btn"):
     st.session_state.user = None
     st.rerun()
 
@@ -310,7 +310,7 @@ if not filtered_df.empty:
             
             update_notes = st.text_area("Update Notes", "")
             
-            if st.button("Update Ticket"):
+            if st.button("Update Ticket", key="update_ticket_btn"):
                 utils.update_ticket_status(selected_ticket_id, new_status, update_notes)
                 st.success("Ticket updated successfully!")
                 st.rerun()
@@ -320,18 +320,18 @@ else:
 # Link to create a new ticket
 st.sidebar.markdown("---")
 st.sidebar.header("Actions")
-if st.sidebar.button("Create New Ticket"):
+if st.sidebar.button("Create New Ticket", key="create_ticket_btn"):
     st.switch_page("pages/submit_ticket.py")
 
-if st.sidebar.button("View Reports"):
+if st.sidebar.button("View Reports", key="view_reports_btn"):
     st.switch_page("pages/reports.py")
 
 # Admin-only actions
 if st.session_state.user['role'] == 'admin':
-    if st.sidebar.button("User Management"):
+    if st.sidebar.button("User Management", key="user_management_btn"):
         st.switch_page("pages/user_management.py")
 
 # Refresh button
-if st.sidebar.button("Refresh Data"):
+if st.sidebar.button("Refresh Data", key="refresh_data_btn"):
     st.session_state.tickets_df = utils.load_tickets()
     st.rerun()
