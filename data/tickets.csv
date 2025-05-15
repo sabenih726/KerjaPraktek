@@ -1,0 +1,4 @@
+ticket_id,title,description,category,priority,status,requester_name,requester_email,department,submit_date,updated_date,update_notes,assigned_to
+TICK-C0A65154,Rusak,tolong bantu,Office Supplies,Medium,Completed,jaja,sabenih726@gmail.com,IT,2025-05-15 09:53:24,2025-05-15 10:04:51,"2025-05-15 10:04:24 - Status changed to In Progress and assigned to admin: perbaikan
+2025-05-15 10:04:29 - Status changed to In Progress and assigned to admin: perbaikan
+2025-05-15 10:04:51 - Status changed to Completed and assigned to admin: done",admin

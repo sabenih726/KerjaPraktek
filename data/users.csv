@@ -1,0 +1,4 @@
+username,password,full_name,email,role,department
+admin,admin123,Admin User,admin@example.com,admin,General Affairs
+staff1,password123,Staff One,staff1@example.com,staff,HR
+staff2,password123,Staff Two,staff2@example.com,staff,Finance
