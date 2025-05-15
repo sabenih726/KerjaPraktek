@@ -4,13 +4,27 @@ import os
 from datetime import datetime
 import utils
 
-# Page configuration
+# Page configuration - Set sidebar to auto by default
 st.set_page_config(
     page_title="GA Ticket Management System",
     page_icon="🎫",
     layout="wide",
-    initial_sidebar_state="expanded"
+    initial_sidebar_state="auto"  # Changed from "expanded" to "auto"
 )
+
+# Hide sidebar for regular users
+# This CSS will be applied conditionally
+hide_sidebar_css = """
+<style>
+    [data-testid="collapsedControl"] {display: none}
+    section[data-testid="stSidebar"] {display: none}
+    .stApp {
+        margin-left: auto !important;
+        margin-right: auto !important;
+        max-width: 1200px !important;
+    }
+</style>
+"""
 
 # Initialize session state variables if they don't exist
 if 'tickets_df' not in st.session_state:
@@ -19,11 +33,17 @@ if 'tickets_df' not in st.session_state:
 # Initialize user in session state if not exists
 if 'user' not in st.session_state:
     st.session_state.user = None
+    # Hide sidebar for non-logged in users
+    st.markdown(hide_sidebar_css, unsafe_allow_html=True)
     
 # Create tabs for user/admin access
 tab1, tab2 = st.tabs(["Submit Ticket", "Admin Login"])
 
 with tab1:
+    # Apply sidebar hiding for Submit Ticket tab if user is not logged in
+    if st.session_state.user is None:
+        st.markdown(hide_sidebar_css, unsafe_allow_html=True)
+        
     # Public view - Submit ticket form
     st.title("General Affairs Ticket Management System")
     st.markdown("Submit a service request to the General Affairs division")
@@ -144,6 +164,9 @@ with tab1:
 with tab2:
     # Admin login form
     if st.session_state.user is None:
+        # Hide sidebar for login screen too
+        st.markdown(hide_sidebar_css, unsafe_allow_html=True)
+        
         st.title("Admin Login")
         st.markdown("Please enter your credentials to access the admin dashboard")
         
@@ -161,6 +184,7 @@ with tab2:
                 else:
                     st.error("Invalid username or password. Please try again.")
     else:
+        # Show sidebar for logged in users
         st.success(f"Logged in as {st.session_state.user['full_name']} ({st.session_state.user['role']})")
         if st.button("Go to Admin Dashboard"):
             # Continue to admin dashboard
@@ -170,8 +194,12 @@ with tab2:
             st.session_state.user = None
             st.rerun()
             
-# Stop execution here for regular app.py
-st.stop()
+# Stop execution here for regular app.py if not logged in
+if st.session_state.user is None:
+    st.stop()
+
+# Remove the sidebar hiding CSS for logged-in users by adding empty markdown
+st.sidebar.markdown("", unsafe_allow_html=True)
 
 # Title and description
 st.title("General Affairs Ticket Management System")
