@@ -39,7 +39,7 @@ streamlit run app.py
 ## Akses Admin
 
 Kredensial default untuk akses admin:
-- Username: admin
+- Username: Rizki
 - Password: admin123
 
 ## Struktur Aplikasi
