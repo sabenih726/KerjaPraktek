@@ -56,7 +56,6 @@ if ticket_data:
         st.write(f"**Status:** {ticket_data['status']}")
     
     with col2:
-        st.write(f"**Priority:** {ticket_data['priority']}")
         submit_date = pd.to_datetime(ticket_data['submit_date']).strftime('%Y-%m-%d %H:%M')
         st.write(f"**Submitted:** {submit_date}")
         st.write(f"**Requester:** {ticket_data['requester_name']}")
