@@ -41,7 +41,7 @@ if st.session_state.user is not None:
         st.rerun()
 else:
     # Login form
-    st.title("Login to GA Ticket Management System")
+    st.title("Login to Facility Maintenance")
     st.markdown("Please enter your credentials to access the system")
     
     with st.form("login_form"):
