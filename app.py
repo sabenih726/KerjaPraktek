@@ -42,7 +42,7 @@ with tab1:
     col_logo, col_title = st.columns([1, 8])
     with col_logo:
         # Ganti "logo.png" dengan path file logo kamu
-        st.image("logo.png", width=70)
+        st.image("assets/logo trakindo.png", width=70)
     with col_title:
         st.title("General Affairs Ticket Management System")
     
