@@ -52,8 +52,8 @@ def load_users():
     if not os.path.exists(USERS_FILE):
         # Create a default admin user
         default_admin = [{
-            "username": "admin",
-            "password": "admin123",  # In production, use hashed passwords
+            "username": "Facility",
+            "password": "123456",  # In production, use hashed passwords
             "full_name": "Admin User",
             "email": "admin@example.com",
             "role": "admin",
