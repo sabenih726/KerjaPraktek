@@ -36,23 +36,12 @@ with st.form("ticket_submission_form"):
             options=utils.get_ticket_categories(),
             help="Select the category that best fits your request"
         )
-        
-        priority = st.select_slider(
-            "Priority *",
-            options=["Low", "Medium", "High", "Urgent"],
-            value="Medium",
-            help="Select the priority level for this request"
-        )
     
     with col2:
         # Use the logged-in user's information
         requester_name = st.text_input("Your Name *", 
                                     value=st.session_state.user['full_name'],
                                     help="Name of the person requesting service")
-        
-        requester_email = st.text_input("Your Email *", 
-                                     value=st.session_state.user['email'],
-                                     help="Email address for follow-up communications")
         
         department = st.text_input("Department *", 
                                 value=st.session_state.user['department'],
@@ -74,9 +63,7 @@ if submit_button:
     required_fields = {
         'title': title,
         'category': category,
-        'priority': priority,
         'requester_name': requester_name,
-        'requester_email': requester_email,
         'department': department,
         'description': description
     }
@@ -92,10 +79,8 @@ if submit_button:
             'title': title,
             'description': description,
             'category': category,
-            'priority': priority,
             'status': 'Pending',
             'requester_name': requester_name,
-            'requester_email': requester_email,
             'department': department,
             'submit_date': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
             'updated_date': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
@@ -113,7 +98,6 @@ if submit_button:
             st.write(f"**Ticket ID:** {ticket_id}")
             st.write(f"**Title:** {title}")
             st.write(f"**Category:** {category}")
-            st.write(f"**Priority:** {priority}")
             st.write(f"**Status:** Pending")
             st.write(f"**Submitted by:** {requester_name}, {department}")
             st.write(f"**Description:**")
