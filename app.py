@@ -6,7 +6,7 @@ import utils
 
 # Page configuration - Set sidebar to auto by default
 st.set_page_config(
-    page_title="GA Ticket Management System",
+    page_title="Tiket Antri Faciltiy",
     page_icon="🎫",
     layout="wide",
     initial_sidebar_state="auto"  # Changed from "expanded" to "auto"
