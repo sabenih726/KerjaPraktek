@@ -187,8 +187,8 @@ if st.session_state.user is None:
 st.sidebar.markdown("", unsafe_allow_html=True)
 
 # Title and description
-st.title("General Affairs Ticket Management System")
-st.markdown(f"Track and manage service requests for the General Affairs division | Logged in as: {st.session_state.user['full_name']} ({st.session_state.user['role'].capitalize()})")
+st.title("Facility Ticket Management System")
+st.markdown(f"Track and manage service requests for the Facility Maintenance | Logged in as: {st.session_state.user['full_name']} ({st.session_state.user['role'].capitalize()})")
 
 # Main dashboard
 st.header("Ticket Dashboard")
