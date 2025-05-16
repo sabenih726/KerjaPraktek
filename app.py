@@ -9,11 +9,10 @@ st.set_page_config(
     page_title="Tiket Antri Faciltiy",
     page_icon="🎫",
     layout="wide",
-    initial_sidebar_state="auto"  # Changed from "expanded" to "auto"
+    initial_sidebar_state="auto"
 )
 
 # Hide sidebar for regular users
-# This CSS will be applied conditionally
 hide_sidebar_css = """
 <style>
     [data-testid="collapsedControl"] {display: none}
@@ -26,42 +25,39 @@ hide_sidebar_css = """
 </style>
 """
 
-# Initialize session state variables if they don't exist
 if 'tickets_df' not in st.session_state:
     st.session_state.tickets_df = utils.load_tickets()
 
-# Initialize user in session state if not exists
 if 'user' not in st.session_state:
     st.session_state.user = None
-    # Hide sidebar for non-logged in users
     st.markdown(hide_sidebar_css, unsafe_allow_html=True)
     
-# Create tabs for user/admin access
 tab1, tab2 = st.tabs(["Submit Ticket", "Admin Login"])
 
 with tab1:
-    # Apply sidebar hiding for Submit Ticket tab if user is not logged in
     if st.session_state.user is None:
         st.markdown(hide_sidebar_css, unsafe_allow_html=True)
-        
-    # Public view - Submit ticket form
-    st.title("General Affairs Ticket Management System")
+    
+    # --- BAGIAN MODIFIKASI: Tambah logo dan judul sejajar ---
+    col_logo, col_title = st.columns([1, 8])
+    with col_logo:
+        # Ganti "logo.png" dengan path file logo kamu
+        st.image("logo.png", width=70)
+    with col_title:
+        st.title("General Affairs Ticket Management System")
+    
     st.markdown("Submit a service request to the General Affairs division")
     
-    # Create a form for ticket submission
     with st.form("ticket_submission_form"):
-        # Basic ticket information
         col1, col2 = st.columns(2)
         
         with col1:
             title = st.text_input("Ticket Title *", help="Brief summary of the request")
-            
             category = st.selectbox(
                 "Category *",
                 options=utils.get_ticket_categories(),
                 help="Select the category that best fits your request"
             )
-            
             priority = st.select_slider(
                 "Priority *",
                 options=["Low", "Medium", "High", "Urgent"],
@@ -74,19 +70,15 @@ with tab1:
             requester_email = st.text_input("Your Email *", help="Email address for follow-up communications")
             department = st.text_input("Department *", help="Your department or division")
         
-        # Description
         description = st.text_area(
             "Description *", 
             height=150,
             help="Provide detailed information about your request"
         )
         
-        # Submit button
         submit_button = st.form_submit_button("Submit Ticket")
 
-    # Processing form submission
     if submit_button:
-        # Validate required fields
         required_fields = {
             'title': title,
             'category': category,
@@ -102,7 +94,6 @@ with tab1:
         if missing_fields:
             st.error(f"Please fill in the following required fields: {', '.join(missing_fields)}")
         else:
-            # Prepare ticket data
             ticket_data = {
                 'ticket_id': utils.generate_ticket_id(),
                 'title': title,
@@ -118,13 +109,10 @@ with tab1:
                 'update_notes': ''
             }
             
-            # Save ticket
             ticket_id = utils.save_ticket(ticket_data)
             
-            # Show success message
             st.success(f"Ticket submitted successfully! Your ticket ID is {ticket_id}")
             
-            # Display ticket details
             with st.expander("Ticket Details", expanded=True):
                 st.write(f"**Ticket ID:** {ticket_id}")
                 st.write(f"**Title:** {title}")
@@ -135,7 +123,6 @@ with tab1:
                 st.write(f"**Description:**")
                 st.write(description)
     
-    # Display ticket search
     st.markdown("---")
     st.subheader("Track Your Ticket")
     ticket_id_search = st.text_input("Enter your ticket ID to check status")
@@ -152,8 +139,6 @@ with tab1:
                 st.write(f"**Submitted:** {submit_date}")
                 st.write(f"**Description:**")
                 st.write(ticket['description'])
-                
-                # Show update history if available
                 if 'update_notes' in ticket and ticket['update_notes'] and not pd.isna(ticket['update_notes']):
                     st.write("**Update History:**")
                     for note in ticket['update_notes'].split('\n'):
