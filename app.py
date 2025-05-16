@@ -44,7 +44,7 @@ with tab1:
         # Ganti "logo.png" dengan path file logo kamu
         st.image("assets/logo trakindo.png", width=150)
     with col_title:
-        st.title("General Affairs Ticket Management System")
+        st.title("Ticket Faciltiy")
     
     st.markdown("Submit a service request to the General Affairs division")
     
