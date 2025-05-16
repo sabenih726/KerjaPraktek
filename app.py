@@ -46,7 +46,7 @@ with tab1:
     with col_title:
         st.title("Ticket Faciltiy")
     
-    st.markdown("Submit a service request to the General Affairs division")
+    st.markdown("Submit a service request to the Facility")
     
     with st.form("ticket_submission_form"):
         col1, col2 = st.columns(2)
