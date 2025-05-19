@@ -15,81 +15,89 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# === Trakindo Brand Styling ===
 st.markdown("""
 <style>
-/* Button styling */
-.stButton>button {
-    background-color: #f7901e;
-    color: #000000;
-    font-weight: 700;
-    border-radius: 6px;
-    padding: 0.5rem 1.2rem;
-    border: none;
-    transition: background-color 0.3s ease;
-}
-.stButton>button:hover {
-    background-color: #d9760c;
-    color: #000000;
+:root {
+  --primary: #f7901e;
+  --background: #ffffff;
+  --foreground: #000000;
+  --card: #fff4e5;
+  --card-foreground: #000000;
+  --muted-foreground: #666666;
 }
 
-/* Sidebar headers */
-[data-testid="stSidebar"] h3 {
-    color: #f7901e;
-    font-weight: 700;
-    margin-bottom: 0.5rem;
+/* Global background and text */
+html, body, [data-testid="stAppViewContainer"] {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: 'Segoe UI', sans-serif;
 }
 
 /* Headings */
 h1, h2, h3, h4, h5 {
-    color: #f7901e;
-    font-weight: 700;
+  color: var(--primary);
+  font-weight: 700;
 }
 
-/* Tabs styling */
+/* Sidebar */
+[data-testid="stSidebar"] h3 {
+  color: var(--primary);
+  font-weight: 700;
+}
+
+/* Button */
+.stButton>button {
+  background-color: var(--primary);
+  color: var(--foreground);
+  font-weight: bold;
+  border-radius: 6px;
+  padding: 0.5rem 1.2rem;
+  border: none;
+}
+.stButton>button:hover {
+  background-color: #ffa940;
+  color: var(--foreground);
+}
+
+/* Tabs */
 .stTabs [role="tablist"] button {
-    background-color: #f7901e;
-    color: #000000;
-    font-weight: 700;
-    border-radius: 4px 4px 0 0;
-    margin-right: 0.2rem;
-    border: none;
+  background-color: var(--primary);
+  color: var(--foreground);
+  font-weight: 700;
+  border-radius: 4px 4px 0 0;
+  margin-right: 0.2rem;
+  border: none;
 }
 .stTabs [role="tablist"] button[aria-selected="true"] {
-    background-color: #d9760c;
-    color: #000000;
-    font-weight: 700;
-    border-bottom: 3px solid #000000;
+  background-color: #ffa940;
+  border-bottom: 2px solid var(--primary);
 }
 
-/* Metrics */
+/* Metric containers */
 .stMetric > div {
-    background-color: #f7901e;
-    color: #000000;
-    border-radius: 8px;
-    padding: 1rem;
-    font-weight: 700;
+  background-color: var(--card);
+  color: var(--card-foreground);
+  border-radius: 8px;
+  padding: 1rem;
+  font-weight: 700;
 }
 
 /* Table headers */
 thead tr th {
-    background-color: #f7901e !important;
-    color: #000000 !important;
+  background-color: var(--primary) !important;
+  color: var(--foreground) !important;
 }
 
-/* Block container padding */
-.block-container {
-    padding-top: 2rem;
-}
-
-/* Sidebar multiselect text color */
+/* Sidebar select and multiselect */
 [data-baseweb="select"] {
-    color: #000000;
+  color: var(--foreground);
 }
 
-/* Sidebar widget spacing */
-.css-1d391kg {  /* Sidebar padding for inputs (may need to adjust per Streamlit version) */
-    margin-bottom: 1rem;
+/* Download buttons */
+[data-testid="baseButton-secondary"] {
+  background-color: var(--primary);
+  color: var(--foreground);
+  font-weight: 700;
 }
 </style>
 """, unsafe_allow_html=True)
