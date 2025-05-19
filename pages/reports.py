@@ -19,11 +19,11 @@ st.markdown("""
 <style>
 :root {
   --primary: #f7901e;
-  --background: #ffffff;
-  --foreground: #000000;
+  --background: #000000;
+  --foreground: #ffffff;
   --card: #fff4e5;
-  --card-foreground: #000000;
-  --muted-foreground: #666666;
+  --card-foreground: #666666;
+  --muted-foreground: #000000;
 }
 
 /* Global background and text */
@@ -77,7 +77,7 @@ h1, h2, h3, h4, h5 {
 .stMetric > div {
   background-color: var(--card);
   color: var(--card-foreground);
-  border-radius: 8px;
+  border-radius: 4px;
   padding: 1rem;
   font-weight: 700;
 }
