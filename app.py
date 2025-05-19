@@ -7,7 +7,7 @@ import utils
 
 # Page configuration
 st.set_page_config(
-    page_title="Trakindo Support System",
+    page_title="Trakindo Facility Maintenance",
     page_icon="🎫",
     layout="centered",
     initial_sidebar_state="collapsed"
