@@ -32,7 +32,7 @@ st.markdown("""
     transition: background-color 0.3s ease;
 }
 .stButton>button:hover {
-    background-color: #e07a14;
+    background-color: #f7901e;
     color: #000000;
 }
 
