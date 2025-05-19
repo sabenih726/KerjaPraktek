@@ -18,37 +18,80 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# === Trakindo Brand Styling ===
+# === Trakindo Brand Styling (match admin_dashboard.py) ===
 st.markdown("""
-    <style>
-    .stButton>button {
-        background-color: #F4A300;
-        color: white;
-        font-weight: bold;
-        border-radius: 8px;
-    }
-    .stRadio > div {
-        color: #222222;
-    }
-    .stMetric {
-        background-color: #F4A300;
-        color: white;
-        border-radius: 8px;
-    }
-    .block-container {
-        padding-top: 2rem;
-    }
-    h1, h2, h3, h4, h5 {
-        color: #F4A300;
-    }
-    .stTabs [data-baseweb="tab-list"] button {
-        background-color: #F4A300;
-        color: white;
-    }
-    </style>
+<style>
+/* Button styling */
+.stButton>button {
+    background-color: #f7901e;
+    color: #000000;
+    font-weight: 700;
+    border-radius: 6px;
+    padding: 0.5rem 1.2rem;
+    border: none;
+    transition: background-color 0.3s ease;
+}
+.stButton>button:hover {
+    background-color: #e07a14;
+    color: #000000;
+}
+
+/* Sidebar headers */
+[data-testid="stSidebar"] h3 {
+    color: #f7901e;
+    font-weight: 700;
+}
+
+/* Headings */
+h1, h2, h3, h4, h5 {
+    color: #f7901e;
+    font-weight: 700;
+}
+
+/* Tabs styling */
+.stTabs [role="tablist"] button {
+    background-color: #f7901e;
+    color: #000000;
+    font-weight: 700;
+    border-radius: 4px 4px 0 0;
+    margin-right: 0.2rem;
+    border: none;
+}
+.stTabs [role="tablist"] button[aria-selected="true"] {
+    background-color: #000000;
+    color: #f7901e;
+    font-weight: 700;
+    border-bottom: 2px solid #f7901e;
+}
+
+/* Metrics */
+.stMetric > div {
+    background-color: #f7901e;
+    color: #000000;
+    border-radius: 8px;
+    padding: 1rem;
+    font-weight: 700;
+}
+
+/* Table headers */
+thead tr th {
+    background-color: #f7901e !important;
+    color: #000000 !important;
+}
+
+/* Block container padding */
+.block-container {
+    padding-top: 2rem;
+}
+
+/* Sidebar multiselect text color */
+[data-baseweb="select"] {
+    color: #000000;
+}
+</style>
 """, unsafe_allow_html=True)
 
-# Matplotlib Style (fallback if seaborn-dark is not available)
+# Matplotlib Style (fallback)
 try:
     plt.style.use('seaborn-v0_8-dark')
 except OSError:
@@ -82,7 +125,7 @@ def generate_reports():
     tickets_df['updated_at'] = pd.to_datetime(tickets_df['updated_at'])
 
     # Sidebar
-    st.sidebar.markdown("<h3 style='color:#F4A300;'>Report Filters</h3>", unsafe_allow_html=True)
+    st.sidebar.markdown("<h3>Report Filters</h3>", unsafe_allow_html=True)
     date_options = ["All Time", "Last 7 Days", "Last 30 Days", "Last 90 Days", "Custom Range"]
     date_filter = st.sidebar.selectbox("Select Period", date_options)
 
@@ -119,7 +162,7 @@ def generate_reports():
         filtered_df = filtered_df[filtered_df['status'].isin(selected_statuses)]
 
     # Metrics
-    st.markdown("<h4 style='color:#F4A300;'>Summary Metrics</h4>", unsafe_allow_html=True)
+    st.markdown("<h4>Summary Metrics</h4>", unsafe_allow_html=True)
     if filtered_df.empty:
         st.warning("No tickets match the selected filters.")
         return
@@ -136,11 +179,11 @@ def generate_reports():
         st.metric("Mean Open Days", "N/A")
 
     # Charts
-    st.markdown("<h4 style='color:#F4A300;'>Visualizations</h4>", unsafe_allow_html=True)
+    st.markdown("<h4>Visualizations</h4>", unsafe_allow_html=True)
     tab1, tab2, tab3 = st.tabs(["Status Distribution", "Category Distribution", "Tickets Over Time"])
 
-    trakindo_yellow = "#F4A300"
-    status_colors = ['#F4A300', '#F4C300', '#CCCCCC']
+    trakindo_orange = "#f7901e"
+    status_colors = ['#f7901e', '#f7a431', '#cccccc']
 
     with tab1:
         status_counts = filtered_df['status'].value_counts()
@@ -158,7 +201,7 @@ def generate_reports():
         category_counts = filtered_df['category'].value_counts()
         buf = io.BytesIO()
         fig, ax = plt.subplots(figsize=(10, 5))
-        category_counts.plot(kind='bar', ax=ax, color=trakindo_yellow)
+        category_counts.plot(kind='bar', ax=ax, color=trakindo_orange)
         ax.set_title('Ticket Category Distribution')
         ax.set_xlabel('Category')
         ax.set_ylabel('Number of Tickets')
@@ -172,7 +215,7 @@ def generate_reports():
         daily_counts = filtered_df.groupby('date').size()
         buf = io.BytesIO()
         fig, ax = plt.subplots(figsize=(10, 5))
-        daily_counts.plot(kind='line', marker='o', ax=ax, color=trakindo_yellow)
+        daily_counts.plot(kind='line', marker='o', ax=ax, color=trakindo_orange)
         ax.set_title('Tickets Submitted Over Time')
         ax.set_xlabel('Date')
         ax.set_ylabel('Number of Tickets')
@@ -182,12 +225,12 @@ def generate_reports():
         st.image(buf)
 
     # Raw Data
-    st.markdown("<h4 style='color:#F4A300;'>Raw Data</h4>", unsafe_allow_html=True)
+    st.markdown("<h4>Raw Data</h4>", unsafe_allow_html=True)
     display_cols = ['ticket_id', 'created_at', 'name', 'subject', 'category', 'priority', 'status']
-    st.dataframe(filtered_df[display_cols])
+    st.dataframe(filtered_df[display_cols], use_container_width=True)
 
     # Export
-    st.markdown("<h4 style='color:#F4A300;'>Export Options</h4>", unsafe_allow_html=True)
+    st.markdown("<h4>Export Options</h4>", unsafe_allow_html=True)
     export_format = st.radio("Select Format", ["CSV", "Excel"], horizontal=True)
 
     if st.button("Generate Report"):
