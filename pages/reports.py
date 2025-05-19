@@ -3,14 +3,11 @@ import pandas as pd
 import os
 import sys
 import matplotlib.pyplot as plt
-import io
 from datetime import datetime, timedelta
 
-# Add parent directory to path to import utils
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import utils
 
-# Page config
 st.set_page_config(
     page_title="Reports - GA Ticket System",
     page_icon="📊",
@@ -18,7 +15,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# === Trakindo Brand Styling (match admin_dashboard.py) ===
+# === Trakindo Brand Styling ===
 st.markdown("""
 <style>
 /* Button styling */
@@ -32,7 +29,7 @@ st.markdown("""
     transition: background-color 0.3s ease;
 }
 .stButton>button:hover {
-    background-color: #f7901e;
+    background-color: #d9760c;
     color: #000000;
 }
 
@@ -40,6 +37,7 @@ st.markdown("""
 [data-testid="stSidebar"] h3 {
     color: #f7901e;
     font-weight: 700;
+    margin-bottom: 0.5rem;
 }
 
 /* Headings */
@@ -58,10 +56,10 @@ h1, h2, h3, h4, h5 {
     border: none;
 }
 .stTabs [role="tablist"] button[aria-selected="true"] {
-    background-color: #f7901e;
+    background-color: #d9760c;
     color: #000000;
     font-weight: 700;
-    border-bottom: 2px solid #f7901e;
+    border-bottom: 3px solid #000000;
 }
 
 /* Metrics */
@@ -88,26 +86,27 @@ thead tr th {
 [data-baseweb="select"] {
     color: #000000;
 }
+
+/* Sidebar widget spacing */
+.css-1d391kg {  /* Sidebar padding for inputs (may need to adjust per Streamlit version) */
+    margin-bottom: 1rem;
+}
 </style>
 """, unsafe_allow_html=True)
 
-# Matplotlib Style (fallback)
 try:
     plt.style.use('seaborn-v0_8-dark')
 except OSError:
     plt.style.use('ggplot')
 
-# File paths
 data_dir = 'data'
 tickets_file = os.path.join(data_dir, 'tickets.csv')
 
-# Auth check
 def check_authentication():
     if 'authenticated' not in st.session_state or not st.session_state.authenticated:
         st.warning("Please log in from the Admin Dashboard page first.")
         st.stop()
 
-# Main report function
 def generate_reports():
     st.title("📊 Ticket System Reports")
     st.markdown("---")
@@ -124,8 +123,8 @@ def generate_reports():
     tickets_df['created_at'] = pd.to_datetime(tickets_df['created_at'])
     tickets_df['updated_at'] = pd.to_datetime(tickets_df['updated_at'])
 
-    # Sidebar
-    st.sidebar.markdown("<h3>Report Filters</h3>", unsafe_allow_html=True)
+    # Sidebar Filters
+    st.sidebar.header("Report Filters")
     date_options = ["All Time", "Last 7 Days", "Last 30 Days", "Last 90 Days", "Custom Range"]
     date_filter = st.sidebar.selectbox("Select Period", date_options)
 
@@ -150,7 +149,6 @@ def generate_reports():
         else:
             filtered_df = tickets_df
 
-    # Filters
     all_categories = sorted(tickets_df['category'].unique())
     selected_categories = st.sidebar.multiselect("Categories", all_categories, default=all_categories)
     if selected_categories:
@@ -161,8 +159,7 @@ def generate_reports():
     if selected_statuses:
         filtered_df = filtered_df[filtered_df['status'].isin(selected_statuses)]
 
-    # Metrics
-    st.markdown("<h4>Summary Metrics</h4>", unsafe_allow_html=True)
+    st.markdown("### Summary Metrics")
     if filtered_df.empty:
         st.warning("No tickets match the selected filters.")
         return
@@ -171,66 +168,60 @@ def generate_reports():
     with col1:
         st.metric("Total Tickets", len(filtered_df))
     with col2:
-        st.metric("Avg Response Time", "N/A")
+        # Calculate average response time if possible
+        if 'response_time_minutes' in filtered_df.columns:
+            avg_response = filtered_df['response_time_minutes'].mean()
+            st.metric("Avg Response Time", f"{avg_response:.1f} mins")
+        else:
+            st.metric("Avg Response Time", "N/A")
     with col3:
         resolution_rate = f"{(filtered_df['status'] == 'Resolved').sum() / len(filtered_df):.1%}"
         st.metric("Resolution Rate", resolution_rate)
     with col4:
-        st.metric("Mean Open Days", "N/A")
+        if 'created_at' in filtered_df.columns and 'updated_at' in filtered_df.columns:
+            open_days = (filtered_df['updated_at'] - filtered_df['created_at']).dt.days.mean()
+            st.metric("Mean Open Days", f"{open_days:.1f} days")
+        else:
+            st.metric("Mean Open Days", "N/A")
 
-    # Charts
-    st.markdown("<h4>Visualizations</h4>", unsafe_allow_html=True)
+    st.markdown("### Visualizations")
     tab1, tab2, tab3 = st.tabs(["Status Distribution", "Category Distribution", "Tickets Over Time"])
 
     trakindo_orange = "#f7901e"
-    status_colors = ['#f7901e', '#f7a431', '#cccccc']
+    status_colors = [trakindo_orange, "#f7a431", "#cccccc"]
 
     with tab1:
         status_counts = filtered_df['status'].value_counts()
-        buf = io.BytesIO()
         fig, ax = plt.subplots(figsize=(8, 5))
-        status_counts.plot(kind='pie', autopct='%1.1f%%', ax=ax, colors=status_colors)
+        status_counts.plot.pie(autopct='%1.1f%%', ax=ax, colors=status_colors)
         ax.set_title('Ticket Status Distribution')
         ax.set_ylabel('')
-        plt.tight_layout()
-        plt.savefig(buf, format='png')
-        buf.seek(0)
-        st.image(buf)
+        st.pyplot(fig)
 
     with tab2:
         category_counts = filtered_df['category'].value_counts()
-        buf = io.BytesIO()
         fig, ax = plt.subplots(figsize=(10, 5))
-        category_counts.plot(kind='bar', ax=ax, color=trakindo_orange)
+        category_counts.plot.bar(ax=ax, color=trakindo_orange)
         ax.set_title('Ticket Category Distribution')
         ax.set_xlabel('Category')
         ax.set_ylabel('Number of Tickets')
-        plt.tight_layout()
-        plt.savefig(buf, format='png')
-        buf.seek(0)
-        st.image(buf)
+        st.pyplot(fig)
 
     with tab3:
         filtered_df['date'] = filtered_df['created_at'].dt.date
         daily_counts = filtered_df.groupby('date').size()
-        buf = io.BytesIO()
         fig, ax = plt.subplots(figsize=(10, 5))
-        daily_counts.plot(kind='line', marker='o', ax=ax, color=trakindo_orange)
+        daily_counts.plot.line(marker='o', ax=ax, color=trakindo_orange)
         ax.set_title('Tickets Submitted Over Time')
         ax.set_xlabel('Date')
         ax.set_ylabel('Number of Tickets')
-        plt.tight_layout()
-        plt.savefig(buf, format='png')
-        buf.seek(0)
-        st.image(buf)
+        st.pyplot(fig)
 
-    # Raw Data
-    st.markdown("<h4>Raw Data</h4>", unsafe_allow_html=True)
+    st.markdown("### Raw Data")
     display_cols = ['ticket_id', 'created_at', 'name', 'subject', 'category', 'priority', 'status']
     st.dataframe(filtered_df[display_cols], use_container_width=True)
 
-    # Export
-    st.markdown("<h4>Export Options</h4>", unsafe_allow_html=True)
+    st.markdown("### Export Options")
     export_format = st.radio("Select Format", ["CSV", "Excel"], horizontal=True)
 
     if st.button("Generate Report"):
@@ -254,6 +245,5 @@ def generate_reports():
                 mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
             )
 
-# Execute
 check_authentication()
 generate_reports()
