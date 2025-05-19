@@ -58,8 +58,8 @@ h1, h2, h3, h4, h5 {
     border: none;
 }
 .stTabs [role="tablist"] button[aria-selected="true"] {
-    background-color: #000000;
-    color: #f7901e;
+    background-color: #f7901e;
+    color: #000000;
     font-weight: 700;
     border-bottom: 2px solid #f7901e;
 }
