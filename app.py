@@ -15,7 +15,7 @@ st.set_page_config(
 
 # Hide pages from sidebar for regular users and apply custom styling
 # Load custom CSS file
-with open('streamlit/style.css') as f:
+with open('.streamlit/style.css') as f:
     css = f.read()
     
 # Add CSS to hide sidebar navigation
@@ -44,24 +44,16 @@ if not os.path.exists(data_file):
     ])
     initial_df.to_csv(data_file, index=False)
 
-# Import libraries for logo
-import base64
-from pathlib import Path
-
-# Function to load and encode the logo
-def get_img_as_base64(file_path):
-    with open(file_path, "rb") as img_file:
-        return base64.b64encode(img_file.read()).decode()
-
-# Load the Trakindo logo
-logo_path = "attached_assets/logo trakindo.png"
-img_base64 = get_img_as_base64(logo_path)
-
-# Page title with Trakindo CAT theme and logo
-st.markdown(f"""
+# Page title with Trakindo CAT theme
+st.markdown("""
 <div style="text-align: center; padding: 1.5rem 0; margin-bottom: 2rem;">
-    <div style="margin-bottom: 1rem;">
-        <img src="data:image/png;base64,{img_base64}" alt="Trakindo Logo" style="height: 60px; margin-bottom: 0.5rem;">
+    <div style="margin-bottom: 1rem; display: flex; justify-content: center; align-items: center;">
+        <div style="background-color: #FFBB00; color: #000000; padding: 5px 15px; font-weight: bold; font-size: 1.8rem; border-radius: 4px;">
+            Trakindo
+        </div>
+        <div style="background-color: #000000; color: white; padding: 5px 15px; font-weight: bold; font-size: 1.8rem; border-radius: 4px; margin-left: 5px;">
+            CAT
+        </div>
     </div>
     <h1 style="color: #000000; font-size: 2.5rem; font-weight: 700; margin-bottom: 0.5rem;">
         Sistem Dukungan
