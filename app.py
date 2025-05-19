@@ -4,14 +4,6 @@ import os
 import uuid
 from datetime import datetime
 import utils
-import base64
-
-# Function to load and display logo
-def get_image_base64(image_path):
-    if os.path.exists(image_path):
-        with open(image_path, "rb") as img_file:
-            return base64.b64encode(img_file.read()).decode()
-    return ""
 
 # Page configuration
 st.set_page_config(
@@ -21,83 +13,24 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# Try to load CSS from streamlit folder (without dot)
-custom_css = ""
-css_path = "streamlit/style.css"
-if os.path.exists(css_path):
-    with open(css_path) as f:
-        custom_css = f.read()
-
-# Hide pages from sidebar for regular users and apply Trakindo styling with fallback
+# Hide pages from sidebar for regular users and apply custom styling
+# Load custom CSS file
+with open('.streamlit/style.css') as f:
+    css = f.read()
+    
 # Add CSS to hide sidebar navigation
-base_style = """
+hide_pages_style = """
 <style>
     div[data-testid="stSidebarNav"] {display: none !important;}
-    
-    /* Trakindo Colors */
-    :root {
-        --primary-color: #FFBB00;
-        --text-color: #000000;
-    }
-    
-    /* Buttons */
-    button[kind="primaryButton"] {
-        background-color: var(--primary-color) !important;
-        color: var(--text-color) !important;
-        font-weight: 600 !important;
-    }
-    
-    button[kind="primaryButton"]:hover {
-        background-color: #E6A800 !important;
-    }
-    
-    /* Links */
-    a {
-        color: var(--primary-color) !important;
-        font-weight: 500;
-    }
-    
-    /* Tabs */
-    div.stTabs [aria-selected="true"] {
-        color: var(--primary-color) !important;
-        font-weight: 600;
-    }
-    
-    /* Form styling */
-    div.stForm {
-        border: 1px solid #e5e7eb;
-        border-radius: 0.5rem;
-        padding: 1.5rem;
-        background-color: white;
-        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
-        margin-bottom: 1.5rem;
-    }
-    
-    /* Admin link */
-    .admin-link {
-        position: fixed;
-        bottom: 10px;
-        right: 10px;
-        color: #d1d5db;
-        font-size: 10px;
-    }
-    
-    /* Logo container */
-    .logo-container {
-        display: flex;
-        justify-content: center;
-        margin-bottom: 1rem;
-    }
-    
-    .logo-container img {
-        max-height: 80px;
-        width: auto;
-    }
 </style>
 """
-
-# Use custom CSS if available, otherwise use the base style
-st.markdown(custom_css if custom_css else base_style, unsafe_allow_html=True)
+# Apply both styles
+st.markdown(f"""
+{hide_pages_style}
+<style>
+{css}
+</style>
+""", unsafe_allow_html=True)
 
 # Create data directory if it doesn't exist
 os.makedirs('data', exist_ok=True)
@@ -111,21 +44,9 @@ if not os.path.exists(data_file):
     ])
     initial_df.to_csv(data_file, index=False)
 
-# Try to load and display logo
-logo_path = "images/trakindo_logo.png"
-logo_base64 = get_image_base64(logo_path)
-
-if logo_base64:
-    # Display logo if found
-    st.markdown(f"""
-    <div class="logo-container">
-        <img src="data:image/png;base64,{logo_base64}" alt="Trakindo Logo">
-    </div>
-    """, unsafe_allow_html=True)
-
 # Page title with Trakindo CAT theme
 st.markdown("""
-<div style="text-align: center; padding: 1rem 0; margin-bottom: 2rem;">
+<div style="text-align: center; padding: 1.5rem 0; margin-bottom: 2rem;">
     <h1 style="color: #000000; font-size: 2.5rem; font-weight: 700; margin-bottom: 0.5rem;">
         <span style="color: #FFBB00;">🎫 Trakindo</span> Support System
     </h1>
