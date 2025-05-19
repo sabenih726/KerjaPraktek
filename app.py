@@ -42,21 +42,21 @@ if not os.path.exists(data_file):
     ])
     initial_df.to_csv(data_file, index=False)
 
-# Trakindo CAT branding
+# Trakindo CAT branding with consistent colors
 st.markdown("""
 <div style="text-align: center; padding: 1.5rem 0; margin-bottom: 2rem;">
     <div style="margin-bottom: 1rem; display: flex; justify-content: center; align-items: center;">
-        <div style="background-color: #FFBB00; color: #000000; padding: 5px 15px; font-weight: bold; font-size: 1.8rem; border-radius: 4px;">
+        <div style="background-color: #FFBB00; color: #000000; padding: 5px 15px; font-weight: 700; font-size: 1.8rem; border-radius: 4px;">
             Trakindo
         </div>
-        <div style="background-color: #000000; color: white; padding: 5px 15px; font-weight: bold; font-size: 1.8rem; border-radius: 4px; margin-left: 5px;">
+        <div style="background-color: #000000; color: white; padding: 5px 15px; font-weight: 700; font-size: 1.8rem; border-radius: 4px; margin-left: 5px;">
             CAT
         </div>
     </div>
     <h1 style="color: #000000; font-size: 2.5rem; font-weight: 700; margin-bottom: 0.5rem;">
         Trakindo Facility Maintenance
     </h1>
-    <p style="color: #6b7280; font-size: 1rem;">report and track your requirements</p>
+    <p style="color: #6b7280; font-size: 1rem;">Report and track your requirements</p>
 </div>
 """, unsafe_allow_html=True)
 
@@ -66,13 +66,13 @@ tab1, tab2 = st.tabs(["📝 Submit Ticket", "🔍 Track Ticket"])
 # Submit Ticket Tab
 with tab1:
     st.markdown("""
-    <h2 style="color: #111827; font-weight: 600; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid #e5e7eb;">
+    <h2 style="color: #111827; font-weight: 600; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 2px solid #f7901e;">
         📝 Submit a New Ticket
     </h2>
     """, unsafe_allow_html=True)
 
     st.markdown("""
-    <div style="background-color: white; border-radius: 0.5rem; padding: 1rem; margin-bottom: 1rem; box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);">
+    <div style="background-color: white; border-radius: 0.5rem; padding: 1rem; margin-bottom: 1rem; box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24); border-left: 5px solid #f7901e;">
         <p style="color: #6b7280; font-size: 0.875rem;">
             Please fill in the form below to report your requirements. All fields marked with * are required.
         </p>
@@ -99,7 +99,9 @@ with tab1:
             height=150
         )
 
-        submit_button = st.form_submit_button("📤 Submit Ticket")
+        submit_button = st.form_submit_button(
+            "📤 Submit Ticket"
+        )
 
         if submit_button:
             if not name or not email or not subject or not description:
@@ -130,13 +132,14 @@ with tab1:
 # Track Ticket Tab
 with tab2:
     st.markdown("""
-    <h2 style="color: #111827; font-weight: 600; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid #e5e7eb;">
+    <h2 style="color: #111827; font-weight: 600; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 2px solid #f7901e;">
         🔍 Track Your Ticket
     </h2>
     """, unsafe_allow_html=True)
 
     st.markdown("""
-    <div style="background-color: white; border-radius: 0.5rem; padding: 1rem; margin-bottom: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);">
+    <div style="background-color: white; border-radius: 0.5rem; padding: 1rem; margin-bottom: 1.5rem; 
+                box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24); border-left: 5px solid #f7901e;">
         <p style="color: #6b7280; font-size: 0.875rem;">
             Enter your Ticket ID below to check the status of your ticket request.
         </p>
@@ -147,7 +150,7 @@ with tab2:
     with col1:
         ticket_id = st.text_input("Enter Your Ticket ID", key="track_ticket_id", placeholder="e.g. A1B2C3D4").strip().upper()
     with col2:
-        track_button = st.button("🔍 Track Ticket", type="primary", use_container_width=True)
+        track_button = st.button("🔍 Track Ticket")
 
     if track_button:
         if not ticket_id:
@@ -158,11 +161,22 @@ with tab2:
                 st.success(f"Ticket found: {ticket_id}")
 
                 status = ticket_info['status']
-                status_color = "#10B981" if status == "Open" else "#F59E0B" if status == "In Progress" else "#3B82F6" if status == "Closed" else "#6B7280"
-                status_icon = "🟢" if status == "Open" else "🟠" if status == "In Progress" else "🔵" if status == "Closed" else "⚫"
+                status_color = (
+                    "#10B981" if status == "Open" else
+                    "#F59E0B" if status == "In Progress" else
+                    "#3B82F6" if status == "Closed" else
+                    "#6B7280"
+                )
+                status_icon = (
+                    "🟢" if status == "Open" else
+                    "🟠" if status == "In Progress" else
+                    "🔵" if status == "Closed" else
+                    "⚫"
+                )
 
                 st.markdown(f"""
-                <div style="background-color: white; border-radius: 0.5rem; padding: 1.5rem; margin-bottom: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24); border-left: 5px solid {status_color};">
+                <div style="background-color: white; border-radius: 0.5rem; padding: 1.5rem; margin-bottom: 1.5rem; 
+                            box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24); border-left: 5px solid {status_color};">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
                         <h3 style="margin: 0; color: #111827;">Ticket #{ticket_info['ticket_id']}</h3>
                         <span style="font-size: 1.25rem; background-color: {status_color}30; color: {status_color}; padding: 0.25rem 0.75rem; border-radius: 9999px; font-weight: 500;">
@@ -191,36 +205,21 @@ with tab2:
                         st.markdown(f"**Current Status:** {ticket_info['status']}")
                         st.markdown(f"**Priority Level:** {ticket_info['priority']}")
                         st.markdown(f"**Created At:** {ticket_info['created_at']}")
-                        st.markdown(f"**Last Updated:** {ticket_info['updated_at']}")
+                        st.markdown(f"**Updated At:** {ticket_info['updated_at']}")
 
                 with description_tab:
-                    st.markdown("### Ticket Description")
-                    st.markdown(f"""
-                    <div style="background-color: #f9fafb; border-radius: 0.375rem; padding: 1rem; border: 1px solid #e5e7eb;">
-                        <p style="white-space: pre-wrap;">{ticket_info['description']}</p>
-                    </div>
-                    """, unsafe_allow_html=True)
+                    st.markdown(f"**Description:**\n\n{ticket_info['description']}")
 
                 with resolution_tab:
-                    if ticket_info['resolution']:
-                        st.markdown("### Resolution Details")
-                        st.markdown(f"""
-                        <div style="background-color: #f0fdf4; border-radius: 0.375rem; padding: 1rem; border: 1px solid #d1fae5;">
-                            <p style="white-space: pre-wrap;">{ticket_info['resolution']}</p>
-                        </div>
-                        """, unsafe_allow_html=True)
-                    else:
-                        st.info("This ticket is still being processed. Check back later for updates.")
+                    resolution_text = ticket_info['resolution'] if ticket_info['resolution'] else "_No resolution provided yet._"
+                    st.markdown(f"**Resolution:**\n\n{resolution_text}")
+
             else:
                 st.error(f"No ticket found with ID: {ticket_id}")
 
 # Footer
 st.markdown("""
-<div style="margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid #e5e7eb; text-align: center;">
-    <p style="color: #6b7280; font-size: 0.875rem;">© 2025 Trakindo Support System • Need help? <a href="mailto:support@trakindo.co.id" style="color: #FFBB00; text-decoration: none; font-weight: 500;">Contact Support</a></p>
-</div>
-
-<div class="admin-link">
-    <a href="/admin_dashboard" target="_self">Admin</a>
-</div>
+<footer style="margin-top: 3rem; text-align: center; font-size: 0.9rem; color: #FFBB00;">
+    Powered by Trakindo Team &bull; 2025 &copy;
+</footer>
 """, unsafe_allow_html=True)
