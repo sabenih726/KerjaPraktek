@@ -7,7 +7,7 @@ import utils
 
 # Page configuration
 st.set_page_config(
-    page_title="Trakindo Support System",
+    page_title="Sistem Dukungan Trakindo",
     page_icon="🎫",
     layout="centered",
     initial_sidebar_state="collapsed"
@@ -15,7 +15,7 @@ st.set_page_config(
 
 # Hide pages from sidebar for regular users and apply custom styling
 # Load custom CSS file
-with open('streamlit/style.css') as f:
+with open('.streamlit/style.css') as f:
     css = f.read()
     
 # Add CSS to hide sidebar navigation
@@ -44,24 +44,40 @@ if not os.path.exists(data_file):
     ])
     initial_df.to_csv(data_file, index=False)
 
-# Page title with Trakindo CAT theme
-st.markdown("""
+# Import libraries for logo
+import base64
+from pathlib import Path
+
+# Function to load and encode the logo
+def get_img_as_base64(file_path):
+    with open(file_path, "rb") as img_file:
+        return base64.b64encode(img_file.read()).decode()
+
+# Load the Trakindo logo
+logo_path = "attached_assets/logo trakindo.png"
+img_base64 = get_img_as_base64(logo_path)
+
+# Page title with Trakindo CAT theme and logo
+st.markdown(f"""
 <div style="text-align: center; padding: 1.5rem 0; margin-bottom: 2rem;">
+    <div style="margin-bottom: 1rem;">
+        <img src="data:image/png;base64,{img_base64}" alt="Trakindo Logo" style="height: 60px; margin-bottom: 0.5rem;">
+    </div>
     <h1 style="color: #000000; font-size: 2.5rem; font-weight: 700; margin-bottom: 0.5rem;">
-        <span style="color: #FFBB00;">🎫 Trakindo</span> Support System
+        Sistem Dukungan
     </h1>
-    <p style="color: #6b7280; font-size: 1rem;">Submit and track support requests easily</p>
+    <p style="color: #6b7280; font-size: 1rem;">Kirim dan lacak permintaan dukungan dengan mudah</p>
 </div>
 """, unsafe_allow_html=True)
 
 # Create tabs for submission and tracking with improved styling
-tab1, tab2 = st.tabs(["📝 Submit a Ticket", "🔍 Track Your Ticket"])
+tab1, tab2 = st.tabs(["📝 Buat Tiket", "🔍 Lacak Tiket"])
 
 # Submit a Ticket tab
 with tab1:
     st.markdown("""
     <h2 style="color: #111827; font-weight: 600; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid #e5e7eb;">
-        📝 Submit a New Support Ticket
+        📝 Buat Tiket Dukungan Baru
     </h2>
     """, unsafe_allow_html=True)
     
@@ -69,7 +85,7 @@ with tab1:
     st.markdown("""
     <div style="background-color: white; border-radius: 0.5rem; padding: 1rem; margin-bottom: 1rem; box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);">
         <p style="color: #6b7280; font-size: 0.875rem;">
-            Please fill out the form below to submit a new support ticket. All fields marked with * are required.
+            Silakan isi formulir di bawah ini untuk mengirimkan tiket dukungan baru. Semua kolom dengan tanda * wajib diisi.
         </p>
     </div>
     """, unsafe_allow_html=True)
@@ -79,31 +95,31 @@ with tab1:
         col1, col2 = st.columns(2)
         
         with col1:
-            name = st.text_input("Full Name *", placeholder="Enter your full name")
-            email = st.text_input("Email Address *", placeholder="Enter your email address")
+            name = st.text_input("Nama Lengkap *", placeholder="Masukkan nama lengkap Anda")
+            email = st.text_input("Alamat Email *", placeholder="Masukkan alamat email Anda")
             category = st.selectbox(
-                "Ticket Category *", 
-                ["General Inquiry", "Technical Support", "Billing Issue", "Feature Request", "Bug Report", "Other"]
+                "Kategori Tiket *", 
+                ["Pertanyaan Umum", "Dukungan Teknis", "Masalah Penagihan", "Permintaan Fitur", "Laporan Bug", "Lainnya"]
             )
         
         with col2:
-            subject = st.text_input("Subject Line *", placeholder="Brief summary of your issue")
-            priority = st.selectbox("Priority Level *", ["Low", "Medium", "High", "Critical"],
-                                  help="Select the urgency of your issue")
+            subject = st.text_input("Subjek *", placeholder="Ringkasan singkat masalah Anda")
+            priority = st.selectbox("Tingkat Prioritas *", ["Rendah", "Sedang", "Tinggi", "Kritis"],
+                                  help="Pilih tingkat urgensi masalah Anda")
         
         description = st.text_area(
-            "Detailed Description *", 
-            placeholder="Please provide detailed information about your issue including any steps to reproduce the problem",
+            "Deskripsi Detail *", 
+            placeholder="Berikan informasi rinci tentang masalah Anda termasuk langkah-langkah untuk mereproduksi masalah jika ada",
             height=150
         )
         
-        submit_button = st.form_submit_button("📤 Submit Ticket")
+        submit_button = st.form_submit_button("📤 Kirim Tiket")
         
         if submit_button:
             if not name or not email or not subject or not description:
-                st.error("Please fill in all required fields.")
+                st.error("Mohon isi semua kolom yang wajib diisi.")
             elif not utils.is_valid_email(email):
-                st.error("Please enter a valid email address.")
+                st.error("Mohon masukkan alamat email yang valid.")
             else:
                 # Generate unique ticket ID
                 ticket_id = str(uuid.uuid4())[:8].upper()
@@ -119,7 +135,7 @@ with tab1:
                     'subject': subject,
                     'category': category,
                     'priority': priority,
-                    'status': "Open",
+                    'status': "Dibuka",
                     'description': description,
                     'resolution': ""
                 }
@@ -128,15 +144,15 @@ with tab1:
                 utils.add_ticket(new_ticket, data_file)
                 
                 # Success message with ticket ID
-                st.success(f"Your ticket has been submitted successfully!")
-                st.info(f"Your ticket ID is: **{ticket_id}**")
-                st.info("Please save this ID to track the status of your ticket.")
+                st.success(f"Tiket Anda telah berhasil dikirim!")
+                st.info(f"ID Tiket Anda adalah: **{ticket_id}**")
+                st.info("Harap simpan ID ini untuk melacak status tiket Anda.")
 
 # Track Your Ticket tab
 with tab2:
     st.markdown("""
     <h2 style="color: #111827; font-weight: 600; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid #e5e7eb;">
-        🔍 Track Your Existing Ticket
+        🔍 Lacak Tiket Anda
     </h2>
     """, unsafe_allow_html=True)
     
@@ -144,7 +160,7 @@ with tab2:
     st.markdown("""
     <div style="background-color: white; border-radius: 0.5rem; padding: 1rem; margin-bottom: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);">
         <p style="color: #6b7280; font-size: 0.875rem;">
-            Enter your ticket ID below to check the status of your support request.
+            Masukkan ID tiket Anda di bawah ini untuk memeriksa status permintaan dukungan Anda.
         </p>
     </div>
     """, unsafe_allow_html=True)
@@ -152,61 +168,61 @@ with tab2:
     # Modern tracking form
     col1, col2 = st.columns([3, 1])
     with col1:
-        ticket_id = st.text_input("Enter your Ticket ID", key="track_ticket_id", placeholder="e.g. A1B2C3D4").strip().upper()
+        ticket_id = st.text_input("Masukkan ID Tiket Anda", key="track_ticket_id", placeholder="mis. A1B2C3D4").strip().upper()
     with col2:
-        track_button = st.button("🔍 Track Ticket", type="primary", use_container_width=True)
+        track_button = st.button("🔍 Lacak Tiket", type="primary", use_container_width=True)
     
     if track_button:
         if not ticket_id:
-            st.error("Please enter a ticket ID.")
+            st.error("Mohon masukkan ID tiket.")
         else:
             ticket_info = utils.get_ticket_by_id(ticket_id, data_file)
             
             if ticket_info is not None:
-                st.success(f"Ticket found: {ticket_id}")
+                st.success(f"Tiket ditemukan: {ticket_id}")
                 
                 # Status Card
                 status = ticket_info['status']
-                status_color = "#10B981" if status == "Open" else "#F59E0B" if status == "In Progress" else "#3B82F6" if status == "Resolved" else "#6B7280"
-                status_icon = "🟢" if status == "Open" else "🟠" if status == "In Progress" else "🔵" if status == "Resolved" else "⚫"
+                status_color = "#10B981" if status == "Dibuka" else "#F59E0B" if status == "Dalam Proses" else "#3B82F6" if status == "Selesai" else "#6B7280"
+                status_icon = "🟢" if status == "Dibuka" else "🟠" if status == "Dalam Proses" else "🔵" if status == "Selesai" else "⚫"
                 
                 st.markdown(f"""
                 <div style="background-color: white; border-radius: 0.5rem; padding: 1.5rem; margin-bottom: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24); border-left: 5px solid {status_color};">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-                        <h3 style="margin: 0; color: #111827;">Ticket #{ticket_info['ticket_id']}</h3>
+                        <h3 style="margin: 0; color: #111827;">Tiket #{ticket_info['ticket_id']}</h3>
                         <span style="font-size: 1.25rem; background-color: {status_color}30; color: {status_color}; padding: 0.25rem 0.75rem; border-radius: 9999px; font-weight: 500;">
                             {status_icon} {status}
                         </span>
                     </div>
                     <h3 style="margin-top: 0; margin-bottom: 0.5rem; color: #111827;">{ticket_info['subject']}</h3>
-                    <p style="color: #6B7280; margin-bottom: 0.25rem;">Submitted by {ticket_info['name']} on {ticket_info['created_at']}</p>
-                    <p style="color: #6B7280; margin-bottom: 0.25rem;">Category: {ticket_info['category']} | Priority: {ticket_info['priority']}</p>
-                    <p style="color: #6B7280; margin-bottom: 0;">Last Updated: {ticket_info['updated_at']}</p>
+                    <p style="color: #6B7280; margin-bottom: 0.25rem;">Diajukan oleh {ticket_info['name']} pada {ticket_info['created_at']}</p>
+                    <p style="color: #6B7280; margin-bottom: 0.25rem;">Kategori: {ticket_info['category']} | Prioritas: {ticket_info['priority']}</p>
+                    <p style="color: #6B7280; margin-bottom: 0;">Terakhir Diperbarui: {ticket_info['updated_at']}</p>
                 </div>
                 """, unsafe_allow_html=True)
                 
                 # Ticket details in tabs
-                details_tab, description_tab, resolution_tab = st.tabs(["📋 Details", "📝 Description", "✅ Resolution"])
+                details_tab, description_tab, resolution_tab = st.tabs(["📋 Detail", "📝 Deskripsi", "✅ Penyelesaian"])
                 
                 with details_tab:
                     col1, col2 = st.columns(2)
                     
                     with col1:
-                        st.markdown("### Ticket Information")
+                        st.markdown("### Informasi Tiket")
                         st.markdown(f"**ID:** {ticket_info['ticket_id']}")
-                        st.markdown(f"**Subject:** {ticket_info['subject']}")
-                        st.markdown(f"**Category:** {ticket_info['category']}")
-                        st.markdown(f"**Submitted by:** {ticket_info['name']}")
+                        st.markdown(f"**Subjek:** {ticket_info['subject']}")
+                        st.markdown(f"**Kategori:** {ticket_info['category']}")
+                        st.markdown(f"**Diajukan oleh:** {ticket_info['name']}")
                     
                     with col2:
-                        st.markdown("### Status Details")
-                        st.markdown(f"**Current Status:** {ticket_info['status']}")
-                        st.markdown(f"**Priority Level:** {ticket_info['priority']}")
-                        st.markdown(f"**Created On:** {ticket_info['created_at']}")
-                        st.markdown(f"**Last Updated:** {ticket_info['updated_at']}")
+                        st.markdown("### Detail Status")
+                        st.markdown(f"**Status Saat Ini:** {ticket_info['status']}")
+                        st.markdown(f"**Tingkat Prioritas:** {ticket_info['priority']}")
+                        st.markdown(f"**Dibuat Pada:** {ticket_info['created_at']}")
+                        st.markdown(f"**Terakhir Diperbarui:** {ticket_info['updated_at']}")
                 
                 with description_tab:
-                    st.markdown("### Ticket Description")
+                    st.markdown("### Deskripsi Tiket")
                     st.markdown("""
                     <div style="background-color: #f9fafb; border-radius: 0.375rem; padding: 1rem; border: 1px solid #e5e7eb;">
                         <p style="white-space: pre-wrap;">{}</p>
@@ -215,21 +231,21 @@ with tab2:
                 
                 with resolution_tab:
                     if ticket_info['resolution']:
-                        st.markdown("### Resolution Details")
+                        st.markdown("### Detail Penyelesaian")
                         st.markdown("""
                         <div style="background-color: #f0fdf4; border-radius: 0.375rem; padding: 1rem; border: 1px solid #d1fae5;">
                             <p style="white-space: pre-wrap;">{}</p>
                         </div>
                         """.format(ticket_info['resolution']), unsafe_allow_html=True)
                     else:
-                        st.info("This ticket is still being processed. Check back later for updates.")
+                        st.info("Tiket ini masih dalam proses. Periksa kembali nanti untuk pembaruan.")
             else:
-                st.error(f"No ticket found with ID: {ticket_id}")
+                st.error(f"Tidak ditemukan tiket dengan ID: {ticket_id}")
 
 # Footer with Trakindo CAT theme
 st.markdown("""
 <div style="margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid #e5e7eb; text-align: center;">
-    <p style="color: #6b7280; font-size: 0.875rem;">© 2025 Trakindo Support System • Need help? <a href="mailto:support@trakindo.co.id" style="color: #FFBB00; text-decoration: none; font-weight: 500;">Contact Support</a></p>
+    <p style="color: #6b7280; font-size: 0.875rem;">© 2025 Sistem Dukungan Trakindo • Butuh bantuan? <a href="mailto:support@trakindo.co.id" style="color: #FFBB00; text-decoration: none; font-weight: 500;">Hubungi Dukungan</a></p>
 </div>
 
 <div class="admin-link">
