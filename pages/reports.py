@@ -48,8 +48,11 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# Matplotlib Style
-plt.style.use('seaborn-dark')
+# Matplotlib Style (fallback if seaborn-dark is not available)
+try:
+    plt.style.use('seaborn-v0_8-dark')
+except OSError:
+    plt.style.use('ggplot')
 
 # File paths
 data_dir = 'data'
