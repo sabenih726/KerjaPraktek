@@ -56,7 +56,7 @@ st.markdown("""
     <h1 style="color: #000000; font-size: 2.5rem; font-weight: 700; margin-bottom: 0.5rem;">
         Trakindo Facility Maintenance
     </h1>
-    <p style="color: #6b7280; font-size: 1rem;">Easily submit and track your support requests</p>
+    <p style="color: #6b7280; font-size: 1rem;">report and track your requirements</p>
 </div>
 """, unsafe_allow_html=True)
 
@@ -67,14 +67,14 @@ tab1, tab2 = st.tabs(["📝 Submit Ticket", "🔍 Track Ticket"])
 with tab1:
     st.markdown("""
     <h2 style="color: #111827; font-weight: 600; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid #e5e7eb;">
-        📝 Submit a New Support Ticket
+        📝 Submit a New Ticket
     </h2>
     """, unsafe_allow_html=True)
 
     st.markdown("""
     <div style="background-color: white; border-radius: 0.5rem; padding: 1rem; margin-bottom: 1rem; box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);">
         <p style="color: #6b7280; font-size: 0.875rem;">
-            Please fill out the form below to submit a new support ticket. All fields marked with * are required.
+            Please fill in the form below to report your requirements. All fields marked with * are required.
         </p>
     </div>
     """, unsafe_allow_html=True)
@@ -138,7 +138,7 @@ with tab2:
     st.markdown("""
     <div style="background-color: white; border-radius: 0.5rem; padding: 1rem; margin-bottom: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);">
         <p style="color: #6b7280; font-size: 0.875rem;">
-            Enter your Ticket ID below to check the status of your support request.
+            Enter your Ticket ID below to check the status of your ticket request.
         </p>
     </div>
     """, unsafe_allow_html=True)
