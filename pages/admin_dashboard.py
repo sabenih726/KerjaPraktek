@@ -40,7 +40,7 @@ st.markdown(
 
     /* Sidebar background and title */
     [data-testid="stSidebar"] {{
-        background-color: {TRAKINDO_BLACK};
+        background-color: {TRAKINDO_ORANGE};
         color: white;
     }}
     [data-testid="stSidebar"] .css-1d391kg {{
