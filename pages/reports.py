@@ -10,7 +10,7 @@ from datetime import datetime, timedelta
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import utils
 
-# Page configuration
+# Page config
 st.set_page_config(
     page_title="Reports - GA Ticket System",
     page_icon="📊",
@@ -18,221 +18,196 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Data file paths
+# === Custom Styling ===
+st.markdown("""
+    <style>
+    .stButton>button {
+        background-color: #f7901e;
+        color: white;
+        font-weight: bold;
+        border-radius: 8px;
+    }
+    .stRadio > div {
+        color: #333;
+    }
+    .stMetric {
+        background-color: #f7901e;
+        color: white;
+        border-radius: 8px;
+    }
+    .block-container {
+        padding-top: 2rem;
+    }
+    h1, h2, h3, h4, h5 {
+        color: #f7901e;
+    }
+    .stTabs [data-baseweb="tab-list"] button {
+        background-color: #f7901e;
+        color: white;
+    }
+    </style>
+""", unsafe_allow_html=True)
+
+# Matplotlib Style
+plt.style.use('seaborn-dark')
+
+# File paths
 data_dir = 'data'
 tickets_file = os.path.join(data_dir, 'tickets.csv')
 
-# Authentication check
+# Auth check
 def check_authentication():
     if 'authenticated' not in st.session_state or not st.session_state.authenticated:
         st.warning("Please log in from the Admin Dashboard page first.")
         st.stop()
 
-# Generate reports
+# Main report function
 def generate_reports():
     st.title("📊 Ticket System Reports")
-    
-    # Load tickets data
+    st.markdown("---")
+
     if not os.path.exists(tickets_file):
         st.info("No ticket data available to generate reports.")
         return
     
     tickets_df = pd.read_csv(tickets_file)
-    
-    if len(tickets_df) == 0:
+    if tickets_df.empty:
         st.info("No tickets found in the system.")
         return
-    
-    # Convert date columns to datetime for filtering
+
     tickets_df['created_at'] = pd.to_datetime(tickets_df['created_at'])
     tickets_df['updated_at'] = pd.to_datetime(tickets_df['updated_at'])
-    
-    # Sidebar filters
-    st.sidebar.header("Report Filters")
-    
-    # Date range filter
-    st.sidebar.subheader("Date Range")
+
+    # Sidebar
+    st.sidebar.markdown("<h3 style='color:#f7901e;'>Report Filters</h3>", unsafe_allow_html=True)
     date_options = ["All Time", "Last 7 Days", "Last 30 Days", "Last 90 Days", "Custom Range"]
     date_filter = st.sidebar.selectbox("Select Period", date_options)
-    
+
     if date_filter == "Custom Range":
         min_date = tickets_df['created_at'].min().date()
         max_date = tickets_df['created_at'].max().date()
-        
         start_date = st.sidebar.date_input("Start Date", min_date)
         end_date = st.sidebar.date_input("End Date", max_date)
-        
-        # Convert to datetime for filtering
         start_datetime = pd.Timestamp(start_date)
         end_datetime = pd.Timestamp(end_date) + pd.Timedelta(days=1) - pd.Timedelta(seconds=1)
-        
-        filtered_df = tickets_df[(tickets_df['created_at'] >= start_datetime) & 
-                               (tickets_df['created_at'] <= end_datetime)]
+        filtered_df = tickets_df[(tickets_df['created_at'] >= start_datetime) & (tickets_df['created_at'] <= end_datetime)]
     else:
-        if date_filter == "Last 7 Days":
-            cutoff_date = datetime.now() - timedelta(days=7)
-        elif date_filter == "Last 30 Days":
-            cutoff_date = datetime.now() - timedelta(days=30)
-        elif date_filter == "Last 90 Days":
-            cutoff_date = datetime.now() - timedelta(days=90)
-        else:  # All Time
-            cutoff_date = tickets_df['created_at'].min()
-        
-        filtered_df = tickets_df[tickets_df['created_at'] >= cutoff_date]
-    
-    # Category filter (multiselect)
+        days_map = {
+            "Last 7 Days": 7,
+            "Last 30 Days": 30,
+            "Last 90 Days": 90,
+            "All Time": None
+        }
+        if days_map[date_filter] is not None:
+            cutoff_date = datetime.now() - timedelta(days=days_map[date_filter])
+            filtered_df = tickets_df[tickets_df['created_at'] >= cutoff_date]
+        else:
+            filtered_df = tickets_df
+
+    # Filters
     all_categories = sorted(tickets_df['category'].unique())
     selected_categories = st.sidebar.multiselect("Categories", all_categories, default=all_categories)
-    
     if selected_categories:
         filtered_df = filtered_df[filtered_df['category'].isin(selected_categories)]
-    
-    # Status filter (multiselect)
+
     all_statuses = sorted(tickets_df['status'].unique())
     selected_statuses = st.sidebar.multiselect("Status", all_statuses, default=all_statuses)
-    
     if selected_statuses:
         filtered_df = filtered_df[filtered_df['status'].isin(selected_statuses)]
-    
-    # Display metrics
-    st.subheader("Summary Metrics")
-    
-    if len(filtered_df) == 0:
+
+    # Metrics
+    st.markdown("<h4 style='color:#f7901e;'>Summary Metrics</h4>", unsafe_allow_html=True)
+    if filtered_df.empty:
         st.warning("No tickets match the selected filters.")
         return
-    
+
     col1, col2, col3, col4 = st.columns(4)
-    
     with col1:
         st.metric("Total Tickets", len(filtered_df))
-    
     with col2:
-        avg_response_time = "N/A"  # In a real system, you'd calculate this
-        st.metric("Avg Response Time", avg_response_time)
-    
+        st.metric("Avg Response Time", "N/A")
     with col3:
-        resolution_rate = f"{len(filtered_df[filtered_df['status'] == 'Resolved']) / len(filtered_df):.1%}" if len(filtered_df) > 0 else "0%"
+        resolution_rate = f"{(filtered_df['status'] == 'Resolved').sum() / len(filtered_df):.1%}"
         st.metric("Resolution Rate", resolution_rate)
-    
     with col4:
-        mean_open_days = "N/A"  # In a real system, you'd calculate this
-        st.metric("Mean Open Days", mean_open_days)
-    
+        st.metric("Mean Open Days", "N/A")
+
     # Charts
-    st.subheader("Visualizations")
-    
+    st.markdown("<h4 style='color:#f7901e;'>Visualizations</h4>", unsafe_allow_html=True)
     tab1, tab2, tab3 = st.tabs(["Status Distribution", "Category Distribution", "Tickets Over Time"])
-    
+
+    trakindo_color = "#f7901e"
+    status_colors = ['#f7901e', '#f7b01e', '#ddd']
+
     with tab1:
-        # Status distribution
         status_counts = filtered_df['status'].value_counts()
-        
-        # Create a buffer to hold the chart
         buf = io.BytesIO()
-        
-        # Create a figure and axis
-        fig, ax = plt.subplots(figsize=(10, 6))
-        
-        # Plot the data
-        status_counts.plot(kind='pie', autopct='%1.1f%%', ax=ax)
+        fig, ax = plt.subplots(figsize=(8, 5))
+        status_counts.plot(kind='pie', autopct='%1.1f%%', ax=ax, colors=status_colors)
         ax.set_title('Ticket Status Distribution')
         ax.set_ylabel('')
-        
-        # Save the figure to the buffer
         plt.tight_layout()
         plt.savefig(buf, format='png')
         buf.seek(0)
-        
-        # Display the figure
         st.image(buf)
-    
+
     with tab2:
-        # Category distribution
         category_counts = filtered_df['category'].value_counts()
-        
-        # Create a buffer to hold the chart
         buf = io.BytesIO()
-        
-        # Create a figure and axis
-        fig, ax = plt.subplots(figsize=(12, 6))
-        
-        # Plot the data
-        category_counts.plot(kind='bar', ax=ax)
+        fig, ax = plt.subplots(figsize=(10, 5))
+        category_counts.plot(kind='bar', ax=ax, color=trakindo_color)
         ax.set_title('Ticket Category Distribution')
         ax.set_xlabel('Category')
         ax.set_ylabel('Number of Tickets')
-        
-        # Save the figure to the buffer
         plt.tight_layout()
         plt.savefig(buf, format='png')
         buf.seek(0)
-        
-        # Display the figure
         st.image(buf)
-    
+
     with tab3:
-        # Tickets over time (daily)
         filtered_df['date'] = filtered_df['created_at'].dt.date
         daily_counts = filtered_df.groupby('date').size()
-        
-        # Create a buffer to hold the chart
         buf = io.BytesIO()
-        
-        # Create a figure and axis
-        fig, ax = plt.subplots(figsize=(12, 6))
-        
-        # Plot the data
-        daily_counts.plot(kind='line', marker='o', ax=ax)
+        fig, ax = plt.subplots(figsize=(10, 5))
+        daily_counts.plot(kind='line', marker='o', ax=ax, color=trakindo_color)
         ax.set_title('Tickets Submitted Over Time')
         ax.set_xlabel('Date')
         ax.set_ylabel('Number of Tickets')
-        
-        # Save the figure to the buffer
         plt.tight_layout()
         plt.savefig(buf, format='png')
         buf.seek(0)
-        
-        # Display the figure
         st.image(buf)
-    
-    # Raw data and export options
-    st.subheader("Raw Data")
-    
-    # Display simplified dataframe
+
+    # Raw Data
+    st.markdown("<h4 style='color:#f7901e;'>Raw Data</h4>", unsafe_allow_html=True)
     display_cols = ['ticket_id', 'created_at', 'name', 'subject', 'category', 'priority', 'status']
     st.dataframe(filtered_df[display_cols])
-    
-    # Export options
-    st.subheader("Export Options")
-    
+
+    # Export
+    st.markdown("<h4 style='color:#f7901e;'>Export Options</h4>", unsafe_allow_html=True)
     export_format = st.radio("Select Format", ["CSV", "Excel"], horizontal=True)
-    
+
     if st.button("Generate Report"):
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
         if export_format == "CSV":
             csv = filtered_df.to_csv(index=False)
-            filename = f"ticket_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
-            
             st.download_button(
                 label="Download CSV Report",
                 data=csv,
-                file_name=filename,
+                file_name=f"ticket_report_{timestamp}.csv",
                 mime="text/csv"
             )
-        else:  # Excel
-            # Generate Excel file
+        else:
             output = io.BytesIO()
             with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
                 filtered_df.to_excel(writer, sheet_name='Ticket Data', index=False)
-            
-            filename = f"ticket_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
-            
             st.download_button(
                 label="Download Excel Report",
                 data=output.getvalue(),
-                file_name=filename,
+                file_name=f"ticket_report_{timestamp}.xlsx",
                 mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
             )
 
-# Main execution
+# Execute
 check_authentication()
 generate_reports()
