@@ -54,7 +54,7 @@ st.markdown("""
         </div>
     </div>
     <h1 style="color: #000000; font-size: 2.5rem; font-weight: 700; margin-bottom: 0.5rem;">
-        Support System
+        Trakindo Facility Maintenance
     </h1>
     <p style="color: #6b7280; font-size: 1rem;">Easily submit and track your support requests</p>
 </div>
