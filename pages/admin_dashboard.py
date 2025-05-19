@@ -11,7 +11,7 @@ import utils
 
 # Page configuration
 st.set_page_config(
-    page_title="Admin Dashboard - GA Ticket System",
+    page_title="Admin Dashboard System",
     page_icon="🎫",
     layout="wide",
     initial_sidebar_state="expanded"
