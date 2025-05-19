@@ -15,7 +15,7 @@ st.set_page_config(
 
 # Hide pages from sidebar for regular users and apply custom styling
 # Load custom CSS file
-with open('.streamlit/style.css') as f:
+with open('streamlit/style.css') as f:
     css = f.read()
     
 # Add CSS to hide sidebar navigation
