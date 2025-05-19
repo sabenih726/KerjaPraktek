@@ -9,101 +9,12 @@ from datetime import datetime
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import utils
 
-# Trakindo colors
-TRAKINDO_ORANGE = "#f7901e"
-TRAKINDO_BLACK = "#000000"
-TRAKINDO_LIGHT_ORANGE = "#ffd1a3"  # lighter shade for backgrounds
-
 # Page configuration
 st.set_page_config(
-    page_title="Admin Dashboard System",
+    page_title="Admin Dashboard - GA Ticket System",
     page_icon="🎫",
     layout="wide",
     initial_sidebar_state="expanded"
-)
-
-# Custom CSS to style Streamlit components with Trakindo colors
-st.markdown(
-    f"""
-    <style>
-    /* Page background and font */
-    .block-container {{
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        color: {TRAKINDO_BLACK};
-    }}
-
-    /* Title and headers */
-    .stApp h1, .stApp h2, .stApp h3, .stApp h4 {{
-        color: {TRAKINDO_ORANGE};
-        font-weight: 700;
-    }}
-
-    /* Sidebar background and title */
-    [data-testid="stSidebar"] {{
-        background-color: {TRAKINDO_ORANGE};
-        color: white;
-    }}
-    [data-testid="stSidebar"] .css-1d391kg {{
-        color: {TRAKINDO_ORANGE} !important;
-        font-weight: 700;
-        font-size: 1.25rem;
-    }}
-
-    /* Buttons style */
-    div.stButton > button:first-child {{
-        background-color: {TRAKINDO_ORANGE};
-        color: {TRAKINDO_BLACK};
-        font-weight: 700;
-        border-radius: 5px;
-        border: 2px solid {TRAKINDO_BLACK};
-        padding: 8px 18px;
-        transition: background-color 0.3s ease;
-    }}
-    div.stButton > button:first-child:hover {{
-        background-color: {TRAKINDO_LIGHT_ORANGE};
-        color: {TRAKINDO_BLACK};
-        border-color: {TRAKINDO_ORANGE};
-    }}
-
-    /* Form inputs focus */
-    input:focus, textarea:focus, select:focus {{
-        border-color: {TRAKINDO_ORANGE} !important;
-        box-shadow: 0 0 5px {TRAKINDO_ORANGE} !important;
-        outline: none !important;
-    }}
-
-    /* Metrics */
-    .stMetric > div > div:first-child {{
-        color: {TRAKINDO_ORANGE} !important;
-        font-weight: 700;
-    }}
-
-    /* Expander header */
-    button[aria-expanded="false"], button[aria-expanded="true"] {{
-        color: {TRAKINDO_ORANGE};
-        font-weight: 700;
-    }}
-
-    /* Checkbox and radio buttons accent color */
-    input[type="checkbox"]:checked + label::before, 
-    input[type="radio"]:checked + label::before {{
-        background-color: {TRAKINDO_ORANGE} !important;
-        border-color: {TRAKINDO_ORANGE} !important;
-    }}
-
-    /* Error and success messages */
-    .stError, .stWarning {{
-        color: {TRAKINDO_ORANGE} !important;
-        font-weight: 700;
-    }}
-    .stSuccess {{
-        color: {TRAKINDO_ORANGE} !important;
-        font-weight: 700;
-    }}
-
-    </style>
-    """,
-    unsafe_allow_html=True
 )
 
 # Data file paths
@@ -152,7 +63,7 @@ def show_dashboard():
     st.title("🛠️ Admin Dashboard")
     st.write(f"Welcome, {st.session_state.username}!")
     
-    # Logout button in the sidebar (styled with orange bg)
+    # Logout button in the sidebar
     if st.sidebar.button("Logout"):
         st.session_state.authenticated = False
         st.session_state.username = None
