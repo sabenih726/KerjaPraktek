@@ -4,6 +4,7 @@ import os
 import uuid
 from datetime import datetime
 import utils
+import pytz
 
 # Page configuration
 st.set_page_config(
@@ -110,7 +111,8 @@ with tab1:
                 st.error("Please enter a valid email address.")
             else:
                 ticket_id = str(uuid.uuid4())[:8].upper()
-                timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                tz = pytz.timezone("Asia/Jakarta")
+                timestamp = datetime.now(tz).strftime("%Y-%m-%d %H:%M:%S")
                 new_ticket = {
                     'ticket_id': ticket_id,
                     'created_at': timestamp,
