@@ -3,6 +3,7 @@ import re
 import hashlib
 import os
 from datetime import datetime
+import pytz
 
 def add_ticket(ticket_data, file_path):
     """
@@ -55,7 +56,8 @@ def update_ticket(ticket_id, updated_data, file_path):
         return False
     
     # Update timestamp
-    updated_data['updated_at'] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    tz = pytz.timezone("Asia/Jakarta")
+    updated_data['updated_at'] = datetime.now(tz).strftime("%Y-%m-%d %H:%M:%S")
     
     # Update fields
     for key, value in updated_data.items():
