@@ -42,10 +42,21 @@ interface ApiResponse {
   timestamp: string
   total_files: number
   processed_files: number
-  failed_files: number
+  failed_files?: number
   results?: ResultItem[]
   extraction_data?: ExtractedData[]
   renamed_files?: { [key: string]: string }
+  download_links?: {
+    excel?: string
+    zip?: string
+  }
+  file_info?: {
+    excel_filename?: string
+    zip_filename?: string
+    zip_size?: number
+    total_renamed_files?: number
+    total_records?: number
+  }
 }
 
 export default function PDFExtractorPage() {
@@ -135,11 +146,15 @@ export default function PDFExtractorPage() {
       formData.append("document_type", documentType)
 
       // Choose endpoint based on file renaming option
-      const endpoint = enableFileRename ? "/extract-with-rename" : "/extract"
+      let endpoint = "/extract"
 
       if (enableFileRename) {
+        endpoint = "/extract-with-rename"
         formData.append("use_name_for_rename", useNameForRename.toString())
         formData.append("use_passport_for_rename", usePassportForRename.toString())
+      } else {
+        // Use batch endpoint for Excel export when not renaming
+        endpoint = "/extract-batch"
       }
 
       console.log(`Sending request to: ${API_URL}${endpoint}`)
@@ -148,7 +163,7 @@ export default function PDFExtractorPage() {
       console.log(`File renaming enabled: ${enableFileRename}`)
 
       const controller = new AbortController()
-      const timeoutId = setTimeout(() => controller.abort(), 30000)
+      const timeoutId = setTimeout(() => controller.abort(), 60000) // Increased timeout for batch processing
 
       const response = await fetch(`${API_URL}${endpoint}`, {
         method: "POST",
@@ -168,11 +183,23 @@ export default function PDFExtractorPage() {
 
       const data: ApiResponse = await response.json()
 
-      // ✅ PERBAIKAN: Handle different response structures
+      // Handle different response structures
       if (enableFileRename && data.extraction_data) {
         // Convert extraction_data to results format for consistent handling
         const convertedResults: ResultItem[] = data.extraction_data.map((extractedData, index) => ({
-          filename: files[index]?.name || `File ${index + 1}`,
+          filename: extractedData.Source_File || files[index]?.name || `File ${index + 1}`,
+          status: "success" as const,
+          data: extractedData,
+        }))
+
+        setResults({
+          ...data,
+          results: convertedResults,
+        })
+      } else if (!enableFileRename && data.extraction_data) {
+        // Batch processing response
+        const convertedResults: ResultItem[] = data.extraction_data.map((extractedData, index) => ({
+          filename: extractedData.Source_File || files[index]?.name || `File ${index + 1}`,
           status: "success" as const,
           data: extractedData,
         }))
@@ -241,7 +268,7 @@ export default function PDFExtractorPage() {
     console.log("=== ZIP DOWNLOAD ATTEMPT ===")
     console.log("Retry count:", retryCount)
     console.log("Results object:", results)
-    
+
     if (!results) {
       toast({
         title: "Error",
@@ -263,85 +290,82 @@ export default function PDFExtractorPage() {
     }
 
     try {
-      // Extract filename from download link (same pattern as Excel)
+      // Extract filename from download link
       const zipPath = results.download_links.zip
-      const filename = zipPath.split('/').pop() || 'renamed_files.zip'
+      const filename = zipPath.split("/").pop() || "renamed_files.zip"
       const downloadUrl = `${API_URL}${zipPath}`
-      
+
       console.log("Download details:")
       console.log("  ZIP path:", zipPath)
       console.log("  Filename:", filename)
       console.log("  Download URL:", downloadUrl)
       console.log("  File info:", results.file_info)
-      
-      // Add timeout and better error handling (same pattern as successful requests)
+
+      // Add timeout and better error handling
       const controller = new AbortController()
       const timeoutId = setTimeout(() => controller.abort(), 60000) // 60 second timeout for ZIP
-      
+
       console.log("Making fetch request...")
       const response = await fetch(downloadUrl, {
-        method: 'GET',
+        method: "GET",
         headers: {
-          'Accept': 'application/zip, application/octet-stream, */*',
-          'Cache-Control': 'no-cache, no-store, must-revalidate',
-          'Pragma': 'no-cache',
-          'Expires': '0',
+          Accept: "application/zip, application/octet-stream, */*",
+          "Cache-Control": "no-cache, no-store, must-revalidate",
+          Pragma: "no-cache",
+          Expires: "0",
         },
-        mode: 'cors',
-        credentials: 'omit',
+        mode: "cors",
+        credentials: "omit",
         signal: controller.signal,
       })
-      
+
       clearTimeout(timeoutId)
-      
+
       console.log("Response received:")
       console.log("  Status:", response.status)
       console.log("  Status text:", response.statusText)
       console.log("  Headers:", Object.fromEntries(response.headers.entries()))
-      
-      console.log("Response status:", response.status)
-      console.log("Response headers:", Object.fromEntries(response.headers.entries()))
-      
+
       if (!response.ok) {
         const errorText = await response.text()
         console.error("Response error text:", errorText)
-        
+
         // If 404 and this is first retry, wait a moment and try again
         if (response.status === 404 && retryCount < 2) {
           console.log(`404 error, retrying in 3 seconds... (attempt ${retryCount + 1})`)
-          await new Promise(resolve => setTimeout(resolve, 3000))
+          await new Promise((resolve) => setTimeout(resolve, 3000))
           return downloadRenamedZip(retryCount + 1)
         }
-        
+
         throw new Error(`HTTP ${response.status}: ${errorText || response.statusText}`)
       }
-      
-      const contentType = response.headers.get('content-type')
+
+      const contentType = response.headers.get("content-type")
       console.log("Content-Type:", contentType)
-      
+
       const blob = await response.blob()
       console.log("Blob size:", blob.size, "bytes")
-      
+
       if (blob.size === 0) {
         throw new Error("Downloaded file is empty")
       }
-      
+
       const url = window.URL.createObjectURL(blob)
-      const a = document.createElement('a')
+      const a = document.createElement("a")
       a.href = url
       a.download = filename
       document.body.appendChild(a)
       a.click()
       window.URL.revokeObjectURL(url)
       document.body.removeChild(a)
-      
+
       toast({
         title: "Download Complete",
         description: `ZIP file downloaded successfully (${(blob.size / 1024 / 1024).toFixed(2)} MB)`,
       })
     } catch (error) {
       console.error("ZIP download error:", error)
-      
+
       let errorMessage = "Unknown error occurred"
       if (error instanceof DOMException && error.name === "AbortError") {
         errorMessage = "Download timed out. Please try again."
@@ -350,7 +374,7 @@ export default function PDFExtractorPage() {
       } else if (error instanceof Error) {
         errorMessage = error.message
       }
-      
+
       // Show retry option for certain errors
       if (retryCount < 2 && (errorMessage.includes("404") || errorMessage.includes("Network"))) {
         toast({
@@ -358,10 +382,10 @@ export default function PDFExtractorPage() {
           description: `${errorMessage} Attempting retry...`,
           variant: "destructive",
         })
-        await new Promise(resolve => setTimeout(resolve, 2000))
+        await new Promise((resolve) => setTimeout(resolve, 2000))
         return downloadRenamedZip(retryCount + 1)
       }
-      
+
       toast({
         title: "Download Error",
         description: `Failed to download ZIP file: ${errorMessage}`,
@@ -370,6 +394,137 @@ export default function PDFExtractorPage() {
     }
   }
 
+  // NEW: Download Excel file from backend
+  const downloadExcelFromBackend = async (retryCount = 0) => {
+    console.log("=== EXCEL DOWNLOAD ATTEMPT ===")
+    console.log("Retry count:", retryCount)
+    console.log("Results object:", results)
+
+    if (!results) {
+      toast({
+        title: "Error",
+        description: "No results available. Please process files first.",
+        variant: "destructive",
+      })
+      return
+    }
+
+    // Check if download_links exists
+    if (!results.download_links?.excel) {
+      console.error("No download_links.excel found in results:", results)
+      toast({
+        title: "Error",
+        description: "No Excel download link available. Please try processing the files again.",
+        variant: "destructive",
+      })
+      return
+    }
+
+    try {
+      // Extract filename from download link
+      const excelPath = results.download_links.excel
+      const filename = excelPath.split("/").pop() || "hasil_ekstraksi.xlsx"
+      const downloadUrl = `${API_URL}${excelPath}`
+
+      console.log("Excel download details:")
+      console.log("  Excel path:", excelPath)
+      console.log("  Filename:", filename)
+      console.log("  Download URL:", downloadUrl)
+
+      // Add timeout and better error handling
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 30000) // 30 second timeout for Excel
+
+      console.log("Making Excel fetch request...")
+      const response = await fetch(downloadUrl, {
+        method: "GET",
+        headers: {
+          Accept: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/octet-stream, */*",
+          "Cache-Control": "no-cache, no-store, must-revalidate",
+          Pragma: "no-cache",
+          Expires: "0",
+        },
+        mode: "cors",
+        credentials: "omit",
+        signal: controller.signal,
+      })
+
+      clearTimeout(timeoutId)
+
+      console.log("Excel response received:")
+      console.log("  Status:", response.status)
+      console.log("  Status text:", response.statusText)
+      console.log("  Headers:", Object.fromEntries(response.headers.entries()))
+
+      if (!response.ok) {
+        const errorText = await response.text()
+        console.error("Excel response error text:", errorText)
+
+        // If 404 and this is first retry, wait a moment and try again
+        if (response.status === 404 && retryCount < 2) {
+          console.log(`Excel 404 error, retrying in 3 seconds... (attempt ${retryCount + 1})`)
+          await new Promise((resolve) => setTimeout(resolve, 3000))
+          return downloadExcelFromBackend(retryCount + 1)
+        }
+
+        throw new Error(`HTTP ${response.status}: ${errorText || response.statusText}`)
+      }
+
+      const contentType = response.headers.get("content-type")
+      console.log("Excel Content-Type:", contentType)
+
+      const blob = await response.blob()
+      console.log("Excel blob size:", blob.size, "bytes")
+
+      if (blob.size === 0) {
+        throw new Error("Downloaded Excel file is empty")
+      }
+
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement("a")
+      a.href = url
+      a.download = filename
+      document.body.appendChild(a)
+      a.click()
+      window.URL.revokeObjectURL(url)
+      document.body.removeChild(a)
+
+      toast({
+        title: "Excel Download Complete",
+        description: `Excel file downloaded successfully (${(blob.size / 1024).toFixed(2)} KB)`,
+      })
+    } catch (error) {
+      console.error("Excel download error:", error)
+
+      let errorMessage = "Unknown error occurred"
+      if (error instanceof DOMException && error.name === "AbortError") {
+        errorMessage = "Download timed out. Please try again."
+      } else if (error instanceof TypeError && error.message.includes("Failed to fetch")) {
+        errorMessage = "Network error. Please check your connection."
+      } else if (error instanceof Error) {
+        errorMessage = error.message
+      }
+
+      // Show retry option for certain errors
+      if (retryCount < 2 && (errorMessage.includes("404") || errorMessage.includes("Network"))) {
+        toast({
+          title: "Excel Download Failed",
+          description: `${errorMessage} Attempting retry...`,
+          variant: "destructive",
+        })
+        await new Promise((resolve) => setTimeout(resolve, 2000))
+        return downloadExcelFromBackend(retryCount + 1)
+      }
+
+      toast({
+        title: "Excel Download Error",
+        description: `Failed to download Excel file: ${errorMessage}`,
+        variant: "destructive",
+      })
+    }
+  }
+
+  // UPDATED: Legacy CSV download function (kept for compatibility)
   const downloadAsExcel = () => {
     if (!results || !results.results) return
 
@@ -427,7 +582,7 @@ export default function PDFExtractorPage() {
       }
     })
 
-    // Convert to CSV format
+    // Convert to CSV format (fallback method)
     const headers = Object.keys(excelData[0] || {})
     const csvContent = [
       headers.join(","),
@@ -443,8 +598,8 @@ export default function PDFExtractorPage() {
     document.body.removeChild(element)
 
     toast({
-      title: "Excel Downloaded",
-      description: "Extraction results have been downloaded as CSV file",
+      title: "CSV Downloaded",
+      description: "Extraction results have been downloaded as CSV file (fallback method)",
     })
   }
 
@@ -558,7 +713,7 @@ export default function PDFExtractorPage() {
         <div className="absolute -bottom-40 -left-32 w-80 h-80 bg-blue-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse delay-1000"></div>
         <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-80 h-80 bg-indigo-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse delay-500"></div>
       </div>
-      
+
       <div className="max-w-7xl mx-auto space-y-8 relative z-10">
         {/* Modern Header */}
         <div className="text-center space-y-6 py-8">
@@ -615,7 +770,9 @@ export default function PDFExtractorPage() {
               <div className="p-2 bg-purple-500/20 rounded-lg">
                 <Upload className="h-5 w-5 text-purple-300" />
               </div>
-              <span className="bg-gradient-to-r from-white to-purple-200 bg-clip-text text-transparent">Upload PDF Files</span>
+              <span className="bg-gradient-to-r from-white to-purple-200 bg-clip-text text-transparent">
+                Upload PDF Files
+              </span>
             </CardTitle>
             <CardDescription className="text-white/70 text-base">
               Select multiple PDF files for intelligent extraction and automated renaming
@@ -624,19 +781,21 @@ export default function PDFExtractorPage() {
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="pdf-files">Choose PDF Files</Label>
+                <Label htmlFor="pdf-files" className="text-white">
+                  Choose PDF Files
+                </Label>
                 <Input
                   id="pdf-files"
                   type="file"
                   accept=".pdf"
                   multiple
                   onChange={handleFileChange}
-                  className="cursor-pointer"
+                  className="cursor-pointer bg-white/10 border-white/20 text-white file:bg-purple-600 file:text-white file:border-0 file:rounded-md"
                 />
                 {files && files.length > 0 && (
                   <div className="flex flex-wrap gap-2 mt-2">
                     {Array.from(files).map((file, index) => (
-                      <Badge key={index} variant="secondary" className="text-xs">
+                      <Badge key={index} variant="secondary" className="text-xs bg-white/20 text-white">
                         {file.name} ({(file.size / 1024 / 1024).toFixed(2)} MB)
                       </Badge>
                     ))}
@@ -645,12 +804,14 @@ export default function PDFExtractorPage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="document-type">Document Type</Label>
+                <Label htmlFor="document-type" className="text-white">
+                  Document Type
+                </Label>
                 <select
                   id="document-type"
                   value={documentType}
                   onChange={(e) => setDocumentType(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-md shadow-sm focus:outline-none focus:ring-purple-500 focus:border-purple-500 text-white"
                 >
                   <option value="SKTT">SKTT</option>
                   <option value="EVLN">EVLN</option>
@@ -668,9 +829,11 @@ export default function PDFExtractorPage() {
                     id="enable-rename"
                     checked={enableFileRename}
                     onChange={(e) => setEnableFileRename(e.target.checked)}
-                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    className="rounded border-gray-300 text-purple-600 focus:ring-purple-500"
                   />
-                  <Label htmlFor="enable-rename">Enable File Renaming</Label>
+                  <Label htmlFor="enable-rename" className="text-white">
+                    Enable File Renaming
+                  </Label>
                 </div>
 
                 {enableFileRename && (
@@ -681,9 +844,11 @@ export default function PDFExtractorPage() {
                         id="use-name"
                         checked={useNameForRename}
                         onChange={(e) => setUseNameForRename(e.target.checked)}
-                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        className="rounded border-gray-300 text-purple-600 focus:ring-purple-500"
                       />
-                      <Label htmlFor="use-name">Use Name in filename</Label>
+                      <Label htmlFor="use-name" className="text-white">
+                        Use Name in filename
+                      </Label>
                     </div>
                     <div className="flex items-center space-x-2">
                       <input
@@ -691,9 +856,11 @@ export default function PDFExtractorPage() {
                         id="use-passport"
                         checked={usePassportForRename}
                         onChange={(e) => setUsePassportForRename(e.target.checked)}
-                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        className="rounded border-gray-300 text-purple-600 focus:ring-purple-500"
                       />
-                      <Label htmlFor="use-passport">Use Passport Number in filename</Label>
+                      <Label htmlFor="use-passport" className="text-white">
+                        Use Passport Number in filename
+                      </Label>
                     </div>
                   </div>
                 )}
@@ -724,9 +891,9 @@ export default function PDFExtractorPage() {
         {results && (
           <div className="space-y-6">
             {/* Success Header */}
-            <div className="flex items-center space-x-2 text-green-600">
+            <div className="flex items-center space-x-2 text-green-400">
               <CheckCircle className="h-6 w-6" />
-              <h2 className="text-2xl font-bold">Proses Berhasil</h2>
+              <h2 className="text-2xl font-bold text-white">Proses Berhasil</h2>
             </div>
 
             {/* Enhanced Renamed Files Display with Download */}
@@ -741,7 +908,7 @@ export default function PDFExtractorPage() {
                         {Object.keys(results.renamed_files).length} files
                       </Badge>
                     </div>
-                    <Button 
+                    <Button
                       onClick={downloadRenamedZip}
                       className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white border-0 shadow-lg"
                       size="sm"
@@ -754,7 +921,10 @@ export default function PDFExtractorPage() {
                 <CardContent>
                   <div className="space-y-3">
                     {Object.entries(results.renamed_files).map(([original, renamed]) => (
-                      <div key={original} className="flex justify-between items-center p-4 bg-white/5 backdrop-blur-sm rounded-xl border border-white/10 hover:bg-white/10 transition-all duration-300">
+                      <div
+                        key={original}
+                        className="flex justify-between items-center p-4 bg-white/5 backdrop-blur-sm rounded-xl border border-white/10 hover:bg-white/10 transition-all duration-300"
+                      >
                         <div className="flex-1 min-w-0">
                           <p className="text-sm text-white/70 truncate">{original}</p>
                         </div>
@@ -772,15 +942,24 @@ export default function PDFExtractorPage() {
             {/* Tabs for different views */}
             <Tabs defaultValue="table" className="w-full">
               <TabsList className="grid w-full grid-cols-3 bg-white/10 backdrop-blur-lg border border-white/20 p-1">
-                <TabsTrigger value="table" className="flex items-center space-x-2">
+                <TabsTrigger
+                  value="table"
+                  className="flex items-center space-x-2 text-white data-[state=active]:bg-white/20"
+                >
                   <FileSpreadsheet className="h-4 w-4" />
                   <span>Extraction Result</span>
                 </TabsTrigger>
-                <TabsTrigger value="excel" className="flex items-center space-x-2">
+                <TabsTrigger
+                  value="excel"
+                  className="flex items-center space-x-2 text-white data-[state=active]:bg-white/20"
+                >
                   <Download className="h-4 w-4" />
                   <span>Excel File</span>
                 </TabsTrigger>
-                <TabsTrigger value="files" className="flex items-center space-x-2">
+                <TabsTrigger
+                  value="files"
+                  className="flex items-center space-x-2 text-white data-[state=active]:bg-white/20"
+                >
                   <FolderOpen className="h-4 w-4" />
                   <span>File Details</span>
                 </TabsTrigger>
@@ -788,10 +967,10 @@ export default function PDFExtractorPage() {
 
               {/* Table View */}
               <TabsContent value="table" className="space-y-4">
-                <Card>
+                <Card className="bg-white/10 backdrop-blur-lg border border-white/20">
                   <CardHeader>
-                    <CardTitle>Extraction Result Data</CardTitle>
-                    <CardDescription>
+                    <CardTitle className="text-white">Extraction Result Data</CardTitle>
+                    <CardDescription className="text-white/70">
                       Processed {results.processed_files} out of {results.total_files} files successfully
                     </CardDescription>
                   </CardHeader>
@@ -799,21 +978,25 @@ export default function PDFExtractorPage() {
                     <div className="overflow-x-auto">
                       <Table>
                         <TableHeader>
-                          <TableRow>
-                            <TableHead className="w-12">No</TableHead>
-                            <TableHead>Filename</TableHead>
+                          <TableRow className="border-white/20">
+                            <TableHead className="w-12 text-white">No</TableHead>
+                            <TableHead className="text-white">Filename</TableHead>
                             {getTableColumns().map((column) => (
-                              <TableHead key={column}>{column}</TableHead>
+                              <TableHead key={column} className="text-white">
+                                {column}
+                              </TableHead>
                             ))}
                           </TableRow>
                         </TableHeader>
                         <TableBody>
                           {getTableData().map((row, index) => (
-                            <TableRow key={index}>
-                              <TableCell>{index + 1}</TableCell>
-                              <TableCell className="font-medium">{row.filename}</TableCell>
+                            <TableRow key={index} className="border-white/10">
+                              <TableCell className="text-white">{index + 1}</TableCell>
+                              <TableCell className="font-medium text-white">{row.filename}</TableCell>
                               {getTableColumns().map((column) => (
-                                <TableCell key={column}>{row[column as keyof typeof row] || "-"}</TableCell>
+                                <TableCell key={column} className="text-white">
+                                  {row[column as keyof typeof row] || "-"}
+                                </TableCell>
                               ))}
                             </TableRow>
                           ))}
@@ -826,27 +1009,55 @@ export default function PDFExtractorPage() {
 
               {/* Excel Export */}
               <TabsContent value="excel" className="space-y-4">
-                <Card>
+                <Card className="bg-white/10 backdrop-blur-lg border border-white/20">
                   <CardHeader>
-                    <CardTitle>Export to Excel</CardTitle>
-                    <CardDescription>Download extraction results as Excel/CSV file</CardDescription>
+                    <CardTitle className="text-white">Export to Excel</CardTitle>
+                    <CardDescription className="text-white/70">
+                      Download extraction results as Excel file
+                    </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="text-center p-6 bg-green-50 rounded-lg border border-green-200">
-                        <FileSpreadsheet className="h-12 w-12 text-green-600 mx-auto mb-2" />
-                        <h3 className="font-semibold text-green-800">Excel Format</h3>
-                        <p className="text-sm text-green-600 mb-4">Download as CSV file (Excel compatible)</p>
-                        <Button onClick={downloadAsExcel} className="w-full">
+                      {/* Backend Excel Download */}
+                      {results.download_links?.excel && (
+                        <div className="text-center p-6 bg-green-500/10 rounded-lg border border-green-500/20">
+                          <FileSpreadsheet className="h-12 w-12 text-green-400 mx-auto mb-2" />
+                          <h3 className="font-semibold text-green-300">Excel Format (Recommended)</h3>
+                          <p className="text-sm text-green-200 mb-4">
+                            Download professionally formatted Excel file from server
+                          </p>
+                          <Button onClick={downloadExcelFromBackend} className="w-full bg-green-600 hover:bg-green-700">
+                            <Download className="mr-2 h-4 w-4" />
+                            Download Excel
+                          </Button>
+                        </div>
+                      )}
+
+                      {/* Fallback CSV Download */}
+                      <div className="text-center p-6 bg-blue-500/10 rounded-lg border border-blue-500/20">
+                        <FileSpreadsheet className="h-12 w-12 text-blue-400 mx-auto mb-2" />
+                        <h3 className="font-semibold text-blue-300">CSV Format (Fallback)</h3>
+                        <p className="text-sm text-blue-200 mb-4">Download as CSV file (Excel compatible)</p>
+                        <Button
+                          onClick={downloadAsExcel}
+                          variant="outline"
+                          className="w-full bg-transparent border-blue-500/30 text-blue-300 hover:bg-blue-500/10"
+                        >
                           <Download className="mr-2 h-4 w-4" />
-                          Download Excel
+                          Download CSV
                         </Button>
                       </div>
-                      <div className="text-center p-6 bg-blue-50 rounded-lg border border-blue-200">
-                        <FileText className="h-12 w-12 text-blue-600 mx-auto mb-2" />
-                        <h3 className="font-semibold text-blue-800">JSON Format</h3>
-                        <p className="text-sm text-blue-600 mb-4">Download raw JSON data</p>
-                        <Button onClick={downloadAllAsJSON} variant="outline" className="w-full bg-transparent">
+
+                      {/* JSON Download */}
+                      <div className="text-center p-6 bg-purple-500/10 rounded-lg border border-purple-500/20">
+                        <FileText className="h-12 w-12 text-purple-400 mx-auto mb-2" />
+                        <h3 className="font-semibold text-purple-300">JSON Format</h3>
+                        <p className="text-sm text-purple-200 mb-4">Download raw JSON data</p>
+                        <Button
+                          onClick={downloadAllAsJSON}
+                          variant="outline"
+                          className="w-full bg-transparent border-purple-500/30 text-purple-300 hover:bg-purple-500/10"
+                        >
                           <Download className="mr-2 h-4 w-4" />
                           Download JSON
                         </Button>
@@ -860,18 +1071,21 @@ export default function PDFExtractorPage() {
               <TabsContent value="files" className="space-y-4">
                 {results.results &&
                   results.results.map((result, index) => (
-                    <Card key={index} className="shadow-md">
+                    <Card key={index} className="shadow-md bg-white/10 backdrop-blur-lg border border-white/20">
                       <CardHeader>
-                        <CardTitle className="flex items-center justify-between">
+                        <CardTitle className="flex items-center justify-between text-white">
                           <div className="flex items-center space-x-2">
                             {result.status === "success" ? (
-                              <CheckCircle className="h-5 w-5 text-green-500" />
+                              <CheckCircle className="h-5 w-5 text-green-400" />
                             ) : (
-                              <XCircle className="h-5 w-5 text-red-500" />
+                              <XCircle className="h-5 w-5 text-red-400" />
                             )}
                             <span className="truncate">File {result.filename}</span>
                           </div>
-                          <Badge variant={result.status === "success" ? "default" : "destructive"}>
+                          <Badge
+                            variant={result.status === "success" ? "default" : "destructive"}
+                            className={result.status === "success" ? "bg-green-500/20 text-green-300" : ""}
+                          >
                             {result.status}
                           </Badge>
                         </CardTitle>
@@ -884,25 +1098,26 @@ export default function PDFExtractorPage() {
                                 onClick={() => copyToClipboard(JSON.stringify(result.data, null, 2))}
                                 variant="outline"
                                 size="sm"
+                                className="bg-transparent border-white/20 text-white hover:bg-white/10"
                               >
                                 <Copy className="mr-2 h-4 w-4" />
                                 Copy Data
                               </Button>
                             </div>
-                            <Separator />
+                            <Separator className="bg-white/20" />
                             <div className="space-y-2">
-                              <Label>Extracted Data:</Label>
-                              <div className="bg-gray-50 p-4 rounded-md border border-gray-200 overflow-auto max-h-[400px]">
-                                <pre className="text-sm whitespace-pre-wrap">
+                              <Label className="text-white">Extracted Data:</Label>
+                              <div className="bg-black/20 p-4 rounded-md border border-white/10 overflow-auto max-h-[400px]">
+                                <pre className="text-sm whitespace-pre-wrap text-white">
                                   {JSON.stringify(result.data, null, 2)}
                                 </pre>
                               </div>
                             </div>
                           </div>
                         ) : (
-                          <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
-                            <p className="text-red-700 font-medium">Error:</p>
-                            <p className="text-red-600 text-sm">{result.error}</p>
+                          <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-lg">
+                            <p className="text-red-300 font-medium">Error:</p>
+                            <p className="text-red-200 text-sm">{result.error}</p>
                           </div>
                         )}
                       </CardContent>
@@ -922,16 +1137,20 @@ export default function PDFExtractorPage() {
               <div className="flex items-center space-x-2">
                 <div
                   className={`w-3 h-3 rounded-full ${
-                    apiStatus === "online" 
-                      ? "bg-green-400 animate-pulse" 
-                      : apiStatus === "offline" 
-                      ? "bg-red-400" 
-                      : "bg-yellow-400 animate-ping"
+                    apiStatus === "online"
+                      ? "bg-green-400 animate-pulse"
+                      : apiStatus === "offline"
+                        ? "bg-red-400"
+                        : "bg-yellow-400 animate-ping"
                   }`}
                 ></div>
                 <span
                   className={`font-semibold ${
-                    apiStatus === "online" ? "text-green-300" : apiStatus === "offline" ? "text-red-300" : "text-yellow-300"
+                    apiStatus === "online"
+                      ? "text-green-300"
+                      : apiStatus === "offline"
+                        ? "text-red-300"
+                        : "text-yellow-300"
                   }`}
                 >
                   {apiStatus === "online" ? "Online" : apiStatus === "offline" ? "Offline" : "Checking..."}
