@@ -541,6 +541,100 @@ async def extract_documents(
         }
     )
 
+@app.post("/extract-batch")
+async def extract_batch_excel(
+    files: List[UploadFile] = File(...),
+    document_type: str = Form(...)
+):
+    """Extract data from multiple PDFs and export to Excel format"""
+    if not files:
+        raise HTTPException(status_code=400, detail="No files provided")
+
+    if document_type not in ["SKTT", "EVLN", "ITAS", "ITK", "Notifikasi", "DKPTKA"]:
+        raise HTTPException(status_code=400, detail="Invalid document type")
+
+    all_data = []
+    temp_dir = tempfile.mkdtemp()
+
+    try:
+        for file in files:
+            if not file.filename.lower().endswith('.pdf'):
+                continue
+
+            content = await file.read()
+
+            with pdfplumber.open(io.BytesIO(content)) as pdf:
+                texts = [page.extract_text() for page in pdf.pages if page.extract_text()]
+                full_text = "\n".join(texts)
+
+            # Extract data based on document type
+            if document_type == "SKTT":
+                extracted_data = extract_sktt(full_text)
+            elif document_type == "EVLN":
+                extracted_data = extract_evln(full_text)
+            elif document_type == "ITAS":
+                extracted_data = extract_itas(full_text)
+            elif document_type == "ITK":
+                extracted_data = extract_itk(full_text)
+            elif document_type == "Notifikasi":
+                extracted_data = extract_notifikasi(full_text)
+            elif document_type == "DKPTKA":
+                extracted_data = extract_dkptka(full_text)
+            else:
+                extracted_data = {}
+
+            # Add source filename to the data
+            extracted_data["Source_File"] = file.filename
+            all_data.append(extracted_data)
+
+        # Create Excel file
+        df = pd.DataFrame(all_data)
+        
+        # Generate filename with timestamp
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        excel_filename = f"Hasil_Ekstraksi_{document_type}_{timestamp}.xlsx"
+        excel_path = os.path.join(temp_dir, excel_filename)
+        
+        # Save to Excel with formatting
+        with pd.ExcelWriter(excel_path, engine='openpyxl') as writer:
+            df.to_excel(writer, sheet_name=f'Data_{document_type}', index=False)
+            
+            # Get the workbook and worksheet
+            workbook = writer.book
+            worksheet = writer.sheets[f'Data_{document_type}']
+            
+            # Auto-adjust column widths
+            for column in worksheet.columns:
+                max_length = 0
+                column_letter = column[0].column_letter
+                for cell in column:
+                    try:
+                        if len(str(cell.value)) > max_length:
+                            max_length = len(str(cell.value))
+                    except:
+                        pass
+                adjusted_width = min(max_length + 2, 50)  # Cap at 50 characters
+                worksheet.column_dimensions[column_letter].width = adjusted_width
+
+        # Store file in global temp storage
+        temp_files_storage[excel_filename] = excel_path
+
+        return {
+            "success": True,
+            "timestamp": datetime.now().isoformat(),
+            "document_type": document_type,
+            "total_files": len(files),
+            "processed_files": len(all_data),
+            "extraction_data": all_data,
+            "download_link": f"/download-excel/{excel_filename}",
+            "excel_filename": excel_filename,
+            "total_records": len(all_data)
+        }
+
+    except Exception as e:
+        print(f"Error in extract_batch_excel: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error processing files: {str(e)}")
+
 @app.post("/extract-with-rename")
 async def extract_with_rename(
     files: List[UploadFile] = File(...),
@@ -586,6 +680,8 @@ async def extract_with_rename(
             else:
                 extracted_data = {}
 
+            # Add source filename to the data
+            extracted_data["Source_File"] = file.filename
             all_data.append(extracted_data)
 
             # Generate new filename
@@ -605,13 +701,34 @@ async def extract_with_rename(
                 'path': temp_file_path
             }
 
-        # Create Excel file
+        # Create Excel file with enhanced formatting
         df = pd.DataFrame(all_data)
-        excel_path = os.path.join(temp_dir, f"Hasil_Ekstraksi_{document_type}.xlsx")
-        df.to_excel(excel_path, index=False)
-
-        # Create ZIP file with renamed PDFs (using same pattern as Excel)
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        excel_filename = f"Hasil_Ekstraksi_{document_type}_{timestamp}.xlsx"
+        excel_path = os.path.join(temp_dir, excel_filename)
+        
+        # Save to Excel with formatting
+        with pd.ExcelWriter(excel_path, engine='openpyxl') as writer:
+            df.to_excel(writer, sheet_name=f'Data_{document_type}', index=False)
+            
+            # Get the workbook and worksheet
+            workbook = writer.book
+            worksheet = writer.sheets[f'Data_{document_type}']
+            
+            # Auto-adjust column widths
+            for column in worksheet.columns:
+                max_length = 0
+                column_letter = column[0].column_letter
+                for cell in column:
+                    try:
+                        if len(str(cell.value)) > max_length:
+                            max_length = len(str(cell.value))
+                    except:
+                        pass
+                adjusted_width = min(max_length + 2, 50)  # Cap at 50 characters
+                worksheet.column_dimensions[column_letter].width = adjusted_width
+
+        # Create ZIP file with renamed PDFs
         zip_filename = f"Renamed_Files_{document_type}_{timestamp}.zip"
         zip_path = os.path.join(temp_dir, zip_filename)
 
@@ -672,18 +789,13 @@ async def extract_with_rename(
             print(f"ZIP verification failed: {str(verify_error)}")
             raise Exception(f"ZIP file is corrupted: {str(verify_error)}")
 
-        # Store file paths for download endpoints (same pattern as Excel)
-        excel_filename = f"Hasil_Ekstraksi_{document_type}_{timestamp}.xlsx"
-        excel_final_path = os.path.join(temp_dir, excel_filename)
-        shutil.move(excel_path, excel_final_path)
-
-        # Store files in global temp storage (same pattern as Excel)
+        # Store files in global temp storage
         temp_files_storage[zip_filename] = zip_path
-        temp_files_storage[excel_filename] = excel_final_path
+        temp_files_storage[excel_filename] = excel_path
 
         print(f"=== FILES STORED IN TEMP STORAGE ===")
         print(f"ZIP: {zip_filename} -> {zip_path}")
-        print(f"Excel: {excel_filename} -> {excel_final_path}")
+        print(f"Excel: {excel_filename} -> {excel_path}")
         print(f"Total files in storage: {len(temp_files_storage)}")
         
         # Verify files are accessible
@@ -692,7 +804,7 @@ async def extract_with_rename(
             size = os.path.getsize(filepath) if exists else 0
             print(f"  {filename}: exists={exists}, size={size} bytes")
 
-        # Create response data (same structure as Excel export)
+        # Create response data
         response_data = {
             "success": True,
             "timestamp": datetime.now().isoformat(),
@@ -709,7 +821,8 @@ async def extract_with_rename(
                 "zip_filename": zip_filename,
                 "zip_size": zip_file_size,
                 "excel_filename": excel_filename,
-                "total_renamed_files": len(renamed_files)
+                "total_renamed_files": len(renamed_files),
+                "total_records": len(all_data)
             }
         }
 
@@ -773,12 +886,12 @@ temp_files_storage = {}
 
 @app.get("/download-zip/{filename}")
 async def download_zip(filename: str):
-    """Download ZIP file containing renamed PDFs - Enhanced with Excel pattern"""
+    """Download ZIP file containing renamed PDFs"""
     print(f"=== ZIP DOWNLOAD REQUEST ===")
     print(f"Requested filename: {filename}")
     print(f"Available files in temp_files_storage: {list(temp_files_storage.keys())}")
 
-    # Try exact match first (same as Excel download)
+    # Try exact match first
     zip_path = temp_files_storage.get(filename)
 
     # If not found, try pattern matching for ZIP files
@@ -820,7 +933,7 @@ async def download_zip(filename: str):
     print(f"File path: {zip_path}")
     print(f"File size: {file_size} bytes")
 
-    # Return FileResponse (same pattern as Excel download)
+    # Return FileResponse
     return FileResponse(
         zip_path,
         media_type='application/zip',
@@ -849,7 +962,12 @@ async def download_excel(filename: str):
         excel_path,
         media_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         filename=filename,
-        headers={"Content-Disposition": f"attachment; filename={filename}"}
+        headers={
+            "Content-Disposition": f"attachment; filename=\"{filename}\"",
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "GET",
+            "Access-Control-Allow-Headers": "*"
+        }
     )
 
 if __name__ == "__main__":
